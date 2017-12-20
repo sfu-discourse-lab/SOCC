@@ -33,11 +33,10 @@ The number of top-level comments for this article.
 The article text. We have preserved the paragraph structure in the text with paragraph tags. 
 
 <b>gnm_comments.csv</b><br>
-This CSV contains article id and comment text and other metadata associated with each article id. 
+This CSV contains article id and comment text and other metadata associated with each comment. 
 
 <i>article_id</i><br>
-A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  
-(E.g., 26691065)
+A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url. (E.g., 26691065)
 
 <i>comment_counter</i><br>
 The comment counter that encodes two pieces of informaion: the source of the comment and the depth of the comment in the comment thread. 
