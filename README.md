@@ -12,8 +12,7 @@ The clean version has ~663K comments, with ~273K top-level comments. This versio
 This CSV contains information about The Globe and Mail articles in our dataset. 
 
 <i>article_id</i><br>
-A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  
-(E.g., 26691065)
+A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  (E.g., 26691065)
 
 <i>title</i><br>
 The title or the headline of The Globe and Mail opinion article. (E.g., Fifty years in Canada, and now I feel like a second-class citizen - The Globe and Mail)
@@ -31,7 +30,7 @@ The date when the article was published. (E.g., 2015-10-16 EDT)
 The number of top-level comments for this article. 
 
 <i>article_text</i><br>
-The article text. We have preserved the paragraph structure in the text with <p> tags. 
+The article text. We have preserved the paragraph structure in the text with paragraph tags. 
 
 <b>gnm_comments.csv</b><br>
 This CSV contains article id and comment text and other metadata associated with each article id. 
