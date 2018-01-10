@@ -3,7 +3,7 @@ SFU Opinion and Comments Corpus
 
 The SFU Opinion and Comments Corpus (SOCC) is a corpus for the analysis of online news comments. Our corpus contains comments and the articles from which the comments originated. The articles are all opinion articles, not hard news articles. The corpus is larger than any other currently available comments corpora, and has been collected with attention to preserving reply structures and other metadata. In addition to the raw corpus, we also present annotations for four different phenomena: constructiveness, toxicity, negation and its scope, and appraisal. 
 
-The dataset contains comments and isolated comments and comment threads threads posted in response to The Globe and Mail opinion articles. 
+The dataset contains isolated comments and comment threads posted in response to The Globe and Mail opinion articles. 
 We have maintained two versions of the corpus. A cleaned version with minimal repetition of comments and an original version containing comment-thread information. 
 
 The clean version has ~663K comments, with ~273K top-level comments. This version has two CSVs: articles.csv and gnm_comments.csv. Below we describe the fileds in each CSV.
@@ -25,6 +25,9 @@ The author of the opinion article.
 
 <i>published_date</i><br>
 The date when the article was published. (E.g., 2015-10-16 EDT)
+
+<i>ncomments</i><br>
+The number of comments for this article. 
 
 <i>ntop_level_comments</i><br>
 The number of top-level comments for this article. 
