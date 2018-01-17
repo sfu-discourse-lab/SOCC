@@ -3,6 +3,14 @@ SFU Opinion and Comments Corpus
 
 The SFU Opinion and Comments Corpus (SOCC) is a corpus for the analysis of online news comments. Our corpus contains comments and the articles from which the comments originated. The articles are all opinion articles, not hard news articles. The corpus is larger than any other currently available comments corpora, and has been collected with attention to preserving reply structures and other metadata. In addition to the raw corpus, we also present annotations for four different phenomena: constructiveness, toxicity, negation and its scope, and appraisal. 
 
+For more information about this work, please see our papers. 
+
+- Kolhatkar. V. and M. Taboada (2017) [Using New York Times Picks to identify constructive comments](www.sfu.ca/~mtaboada/docs/publications/Kolhatkar_Taboada_EMNLP2017_WS.pdf). Proceedings of the Workshop Natural Language Processing Meets Journalism, Conference on Empirical Methods in Natural Language Processing. Copenhagen. September 2017.
+
+- Kolhatkar, V. and M. Taboada (2017) Constructiveness in news comments. Proceedings of the 1st Abusive Language Online Workshop, 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17. Presentation slides.
+
+
+
 # Raw data
 
 The dataset contains isolated comments and comment threads posted in response to The Globe and Mail opinion articles. 
@@ -76,4 +84,3 @@ The positive votes received by the comment.
 # Annotated data
 
 
-For more information about this work, please see our papers. 
