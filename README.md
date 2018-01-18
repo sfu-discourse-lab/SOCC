@@ -91,4 +91,15 @@ The positive votes received by the comment.
 
 # Annotated data
 
+## Constructiveness and toxicity
+
+## Appraisal
+
+The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
+The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
+
+## Negation
+The negation annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
+The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
+
 
