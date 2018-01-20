@@ -10,91 +10,150 @@ For more information about this work, please see our papers.
 - Kolhatkar, V. and M. Taboada (2017) [Constructiveness in news comments](www.sfu.ca/~mtaboada/docs/publications/Kolhatkar_Taboada_Abusive_Lg_WS_2017.pdf). [Proceedings of the 1st Abusive Language Online Workshop](https://sites.google.com/site/abusivelanguageworkshop2017/), 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17.
 
 The data is divided into two main parts: 
-- Raw data
-- Annotated data. Annotations:
-  - Constructiveness
-  - Toxicity
-  - Appraisal
-  - Negation
+- Raw data 
+- Annotated data
+  - SFU constructiveness and toxicity corpus
+  - SFU Appraisal corpus
+  - SFU negation corpus
 
 
 
 # Raw data 
-The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, \textit{The Globe and Mail}, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files. 
+The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, \textit{The Globe and Mail}, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
 
-<b>gnm_articles.csv</b><br>
+## gnm_articles.csv
+
+<br>
 This CSV contains information about The Globe and Mail articles in our dataset. 
 
-<i>article_id</i><br>
+<b>article_id</b><br>
 A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  (E.g., 26691065)
 
-<i>title</i><br>
+<b>title</b><br>
 The title or the headline of The Globe and Mail opinion article. (E.g., <em>Fifty years in Canada, and now I feel like a second-class citizen</em>)
 
-<i>article_url</i><br>
+<b>article_url</b><br>
 The Globe and Mail url for the article. (E.g., http://www.theglobeandmail.com/opinion/fifty-years-in-canada-and-now-i-feel-like-a-second-class-citizen/article26691065/)
 
-<i>author</i><br>
+<b>author</b><br>
 The author of the opinion article. 
 
-<i>published_date</i><br>
+<b>published_date</b><br>
 The date when the article was published. (E.g., 2015-10-16 EDT)
 
-<i>ncomments</i><br>
+<b>ncomments</b><br>
 The number of comments in the comments corpus for this article. 
 
-<i>ntop_level_comments</i><br>
+<b>ntop_level_comments</b><br>
 The number of top-level comments in the comments corpus for this article. 
 
-<i>article_text</i><br>
+<b>article_text</b><br>
 The article text. We have preserved the paragraph structure in the text with paragraph tags. 
 
-<b>gnm_comments.csv</b><br>
-This CSV contains article id and comment text and other metadata associated with each comment. 
+## gnm_comments.csv< <br>
+The CSV contains all unique comments in response to the articles in articles.csv after removing duplicates and comments with large overlap. The corpus is useful to study individual comments, i.e., without considering their location in the comment thread structure.
 
-<i>article_id</i><br>
+<b>article_id</b><br>
 A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url. (E.g., 26691065)
 
-<i>comment_counter</i><br>
-The comment counter that encodes two pieces of informaion: the source of the comment and the depth of the comment in the comment thread. 
+<b>comment_counter</b><br>
+The comment counter which encodes the position and depth of a comment in a comment thread. Below are some examples. 
+- First top-level comment: source1_article-id_0
+- First child of the top-level comment: source1_article-id_0_0
+- Second child of the top-level comment: source1_article-id_0_1
+- Grandchildren. source1_article-id_0_0_0, source1_article-id_0_0_1
 
-<i>author</i><br>
-The author of the comment. 
+<b>comment_author</b><br>
+The username of the author of the comment. 
 
-<i>post_time</i><br>
+<b>post_time</b><br>
 The posting time of the comment. The comments from source2 have post_time. 
 
-<i>timestamp</i><br>	
+<b>timestamp</b><br>	
 The timestamp indicating the posting time of the comment. The comments from source1 have timestamp. 
 
-<i>comment_text</i><br>
-The comment text. The text is minimally preproessed. We have cleaned html tags and have done preliminary word segmentation to fix missing spaces after punctuation. 
+<b>comment_text</b><br>
+The comment text. The text is minimally preproessed. We have cleaned the HTML tags and have done preliminary word segmentation to fix missing spaces after punctuation. 
 
-<i>reactions</i><br>
+<b>reactions</b><br>
 The comments from source2 occassionaly have reactions. 
 
-<i>replies</i><br>
+<b>replies</b><br>
 A flag indicating whether the comment has replies or not. 
 
-<i>TotalVotes</i><br>
+<b>TotalVotes</b><br>
 The total votes (positive votes + negative votes)
 
-<i>negVotes</i><br>
+<b>negVotes</b><br>
 The negative votes received by the comment.
 
-<i>posVotes</i><br>
+<b>posVotes</b><br>
 The positive votes received by the comment. 
+
+<b>vote</b><br>
+Not sure. A Field from the scraped comments JSON. 
+
+<b>comment_id</b><br>
+The comment identifier from the scraped comments JSON
+
+<b>parentID</b><br>
+The parent's identifier from the scraped comments JSON
+
+<b>threadID</b><br>
+The thread identifier from the scraped comments JSON
+
+<b>streamId</b><br>
+The stream identifier from the scraped comments JSON
+
+<b>edited</b><br>
+A Field from the scraped comments JSON. Guess: Whether the comment is edited or not. 
+
+<b>isModerator</b><br>
+A Field from the scraped comments JSON. Guess: Whether the commenter is a moderator. The value is usually False. 
+
+<b>highlightGroups</b><br>
+Not sure. A Field from the scraped comments JSON. 
+
+<b>moderatorEdit</b><br>
+Not sure. A Field from the scraped comments JSON. Guess: Whether the comment is edited by the moderator or not.
+
+<b>descendantsCount</b><br>
+Not sure. A Field from the scraped comments JSON. Guess: The number of descendents in the thread structure. 
+
+<b>threadTimestamp</b><br>
+The thread time stamp from the scraped JSON.
+
+<b>flagCount</b><br>
+Not sure. A Field from the scraped comments JSON. 
+
+<b>sender_isSelf</b><br>
+Not sure. A Field from the scraped comments JSON. 
+
+<b>sender_loginProvider</b><br>
+The login provider (e.g., Facebook, GooglePlus, LinkedIn, Twitter, Google)
+
+<b>data_type</b><br>
+A Field from the scraped comments JSON, usually marked as 'comment'. 
+
+<b>is_empty</b><br>
+Not sure. A Field from the scraped comments JSON. Guess: Whether the comment is empty or not. 
+
+<b>status</b><br>
+The status of the comment (e.g., published, rejected, deleted)
+
+## gnm_comment_threads.csv <br>
+
 
 # Annotated data
 
-## Constructiveness and toxicity
+## SFU constructiveness and toxicity corpus
 
-## Appraisal
+## SFU Appraisal corpus
 
 The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
 The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
 
-## Negation
+## SFU negation corpus
 The negation annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
 The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
 
