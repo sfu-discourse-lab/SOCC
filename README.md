@@ -19,21 +19,17 @@ The data is divided into two main parts:
 
 
 
-# Raw data
+# Raw data 
+The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, \textit{The Globe and Mail}, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files. 
 
-The dataset contains isolated comments and comment threads posted in response to The Globe and Mail opinion articles. 
-We have maintained two versions of the corpus. A cleaned version with minimal repetition of comments and an original version containing comment-thread information. 
-
-The clean version has ~663K comments, with ~273K top-level comments. This version has two CSVs: articles.csv and gnm_comments.csv. Below we describe the fileds in each CSV.
-
-<b>articles.csv</b><br>
+<b>gnm_articles.csv</b><br>
 This CSV contains information about The Globe and Mail articles in our dataset. 
 
 <i>article_id</i><br>
 A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  (E.g., 26691065)
 
 <i>title</i><br>
-The title or the headline of The Globe and Mail opinion article. (E.g., Fifty years in Canada, and now I feel like a second-class citizen - The Globe and Mail)
+The title or the headline of The Globe and Mail opinion article. (E.g., <em>Fifty years in Canada, and now I feel like a second-class citizen</em>)
 
 <i>article_url</i><br>
 The Globe and Mail url for the article. (E.g., http://www.theglobeandmail.com/opinion/fifty-years-in-canada-and-now-i-feel-like-a-second-class-citizen/article26691065/)
@@ -45,10 +41,10 @@ The author of the opinion article.
 The date when the article was published. (E.g., 2015-10-16 EDT)
 
 <i>ncomments</i><br>
-The number of comments for this article. 
+The number of comments in the comments corpus for this article. 
 
 <i>ntop_level_comments</i><br>
-The number of top-level comments for this article. 
+The number of top-level comments in the comments corpus for this article. 
 
 <i>article_text</i><br>
 The article text. We have preserved the paragraph structure in the text with paragraph tags. 
