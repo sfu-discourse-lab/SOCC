@@ -150,6 +150,52 @@ The fields in this CSV are same as that of gnm_comments.csv.
 
 ## SFU constructiveness and toxicity corpus
 
+
+<b>article_id</b><br>
+A unique identifier for the article. This identifier can be used to link the comment to the appropriate article from gnm_articles.csv in the raw corpus.
+
+<b>comment_counter</b><br>
+The comment counter which encodes the position and depth of a comment in a comment thread. The comment counter can be used to link the comment to the raw corpus. 
+
+<b>title</b><br>
+The title of The Globe and Mail opinion article. 
+
+<b>globe_url</b><br>
+The URL of the article on The Globe and Mail. 
+
+<b>comment_text</b><br>
+The comment text. 
+
+<b>is_constructive</b><br>
+Crowd's annotation on constructiveness (yes, no, not sure)
+
+<b>is_constructive:confidence</b><br>
+Crowd's confidence (between 0 to 1.0) about the answer. In CrowdFlower terminology, each annotator has a trust level based on how they perform on the gold examples, and each answer has a confidence, which is a normalized score of the summation of the trusts associated with annotators.
+
+<b>toxic_level</b><br>
+Crowd's annotation on the toxicity level of the comment
+
+<b>toxic_level:confidence</b><br>
+Crowd's confidence (between 0 to 1.0) about the answer.
+
+<b>did_you_read_the_article</b><br>
+Whether the annotator has read the article or not. 
+
+<b>did_you_read_the_article:confidence</b><br>
+Crowd's confidence (between 0 to 1.0) about the answer.
+
+<b>annotator_comments</b><br>
+Free text comments from the annotators. 
+
+<b>expert_is_constructive</b><br>
+Expert's judgement on constructiveness of the comment. 
+
+<b>expert_toxicity_level</b><br>
+Expert's judgement on the toxicity level of the comment. 
+
+<b>expert_comments</b><br>
+Expert's free text comments on crowd's annotations. 
+
 ## SFU Appraisal corpus
 
 The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
