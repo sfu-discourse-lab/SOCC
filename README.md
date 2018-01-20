@@ -24,7 +24,7 @@ The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) to
 ## gnm_articles.csv
 
 <br>
-This CSV contains information about The Globe and Mail articles in our dataset. 
+This CSV contains information about The Globe and Mail articles in our dataset. Below we describe fields in this CSV.
 
 <b>article_id</b><br>
 A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url.  (E.g., 26691065)
@@ -50,8 +50,8 @@ The number of top-level comments in the comments corpus for this article.
 <b>article_text</b><br>
 The article text. We have preserved the paragraph structure in the text with paragraph tags. 
 
-## gnm_comments.csv< <br>
-The CSV contains all unique comments in response to the articles in articles.csv after removing duplicates and comments with large overlap. The corpus is useful to study individual comments, i.e., without considering their location in the comment thread structure.
+## gnm_comments.csv <br>
+The CSV contains all unique comments (663,173 comments) in response to the articles in articles.csv after removing duplicates and comments with large overlap. The corpus is useful to study individual comments, i.e., without considering their location in the comment thread structure. Below we describe fields in this CSV.
 
 <b>article_id</b><br>
 A unique identifier for the article. We use this identifier in the comments CSV. You'll also see this identifier in the article url. (E.g., 26691065)
@@ -142,7 +142,9 @@ Not sure. A Field from the scraped comments JSON. Guess: Whether the comment is 
 The status of the comment (e.g., published, rejected, deleted)
 
 ## gnm_comment_threads.csv <br>
+This CSV contains all unique comment threads -- a total of 304,099 unique comment threads in response to the articles in the gnm_articles.csv. This CSV can be used to study online conversations.
 
+The fields in this CSV are same as that of gnm_comments.csv.
 
 # Annotated data
 
