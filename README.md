@@ -150,6 +150,18 @@ The fields in this CSV are same as that of gnm_comments.csv.
 
 ## SFU constructiveness and toxicity corpus
 
+We annotated a subset of SOCC for constructiveness and toxicity. The annotated corpus is organized as a CSV and contains 1,045 annotated comments in responses to 10 different articles covering a variety of subjects: technology, immigration, terrorism, politics, budget, social issues, religion, property, and refugees. For half of the articles, we included only top-level comments. For the other half, we included both top-level comments and responses. We used CrowdFlower (https://www.crowdflower.com/) as our crowdsourcing annotation platform and annotated the comments for constructiveness. We asked the annotators to first read the articles, and then to tell us whether the displayed comment was constructive or not. 
+
+For toxicity, we asked annotators a multiple-choice question, *How toxic is the comment?* Four answers were possible:
+
+  - Very toxic
+  - Toxic
+  - Mildly toxic
+  - Not toxic
+
+More information on the annotation, and the instructions to annotators, is available in the CrowdFlower_instructions file. 
+
+## SFU_constructiveness_toxicity_corpus.csv
 
 <b>article_id</b><br>
 A unique identifier for the article. This identifier can be used to link the comment to the appropriate article from gnm_articles.csv in the raw corpus.
