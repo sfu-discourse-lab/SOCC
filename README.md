@@ -66,32 +66,32 @@ The comment counter which encodes the position and depth of a comment in a comme
 <b>comment_author</b><br>
 The username of the author of the comment. 
 
-<b>post_time</b><br>
-The posting time of the comment. The comments from source2 have post_time. 
-
 <b>timestamp</b><br>	
 The timestamp indicating the posting time of the comment. The comments from source1 have timestamp. 
 
+<b>post_time</b><br>
+The posting time of the comment. The comments from source2 have post_time. 
+
 <b>comment_text</b><br>
 The comment text. The text is minimally preproessed. We have cleaned the HTML tags and have done preliminary word segmentation to fix missing spaces after punctuation. 
+
+<b>TotalVotes</b><br>
+The total votes (positive votes + negative votes)
+
+<b>posVotes</b><br>
+The positive votes received by the comment. 
+
+<b>negVotes</b><br>
+The negative votes received by the comment.
+
+<b>vote</b><br>
+Not sure. A Field from the scraped comments JSON. 
 
 <b>reactions</b><br>
 The comments from source2 occassionaly have reactions. 
 
 <b>replies</b><br>
 A flag indicating whether the comment has replies or not. 
-
-<b>TotalVotes</b><br>
-The total votes (positive votes + negative votes)
-
-<b>negVotes</b><br>
-The negative votes received by the comment.
-
-<b>posVotes</b><br>
-The positive votes received by the comment. 
-
-<b>vote</b><br>
-Not sure. A Field from the scraped comments JSON. 
 
 <b>comment_id</b><br>
 The comment identifier from the scraped comments JSON
