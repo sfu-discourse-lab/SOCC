@@ -88,7 +88,11 @@ The negative votes received by the comment.
 Not sure. A Field from the scraped comments JSON. 
 
 <b>reactions</b><br>
-The comments from source2 occassionaly have reactions. 
+A list of reactions of other commenters on this comment. The comments from source2 occassionaly have reactions. 
+Here is an example:
+
+{u'reaction_list': [{u'reaction_user': u'areukiddingme', u'reaction': u'disagree', u'reaction_time': u'Dec 13, 2016'}, {u'reaction_user': u'Mark Shore', u'reaction': u'like', u'reaction_time': u'Dec 13, 2016'}], u'reaction_counts': [u'All 2']}
+
 
 <b>replies</b><br>
 A flag indicating whether the comment has replies or not. 
