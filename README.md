@@ -10,7 +10,7 @@ For more information about this work, please see our papers.
 - Kolhatkar, V. and M. Taboada (2017) [Constructiveness in news comments](http://aclweb.org/anthology/W17-3002). [Proceedings of the 1st Abusive Language Online Workshop](https://sites.google.com/site/abusivelanguageworkshop2017/), 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17.
 
 The data is divided into two main parts: 
-- Raw data 
+- [Raw data](#raw)
 - Annotated data
   - SFU constructiveness and toxicity corpus
   - SFU Appraisal corpus
@@ -18,7 +18,7 @@ The data is divided into two main parts:
 
 
 
-# Raw data 
+<a name="raw"># Raw data</a> 
 The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, <em>The Globe and Mail</em>, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
 
 ## gnm_articles.csv
@@ -150,7 +150,7 @@ This CSV contains all unique comment threads -- a total of 304,099 unique commen
 
 The fields in this CSV are same as that of gnm_comments.csv.
 
-# Annotated data
+<a name="annotated"># Annotated data</a>
 
 ## SFU constructiveness and toxicity corpus
 
