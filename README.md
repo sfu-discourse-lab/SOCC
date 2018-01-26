@@ -13,12 +13,12 @@ The data is divided into two main parts:
 - [Raw data](#raw)
 - Annotated data
   - SFU constructiveness and toxicity corpus
-  - SFU Appraisal corpus
+  - [SFU Appraisal corpus](#sfu-appraisal-corpus)
   - SFU negation corpus
 
 
 
-<a name="raw"># Raw data</a> 
+# <a name="raw"></a>Raw data 
 The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, <em>The Globe and Mail</em>, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
 
 ## gnm_articles.csv
@@ -150,7 +150,7 @@ This CSV contains all unique comment threads -- a total of 304,099 unique commen
 
 The fields in this CSV are same as that of gnm_comments.csv.
 
-<a name="annotated"># Annotated data</a>
+# <a name="annotated"></a>Annotated data
 
 ## SFU constructiveness and toxicity corpus
 
