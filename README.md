@@ -13,11 +13,11 @@ For more information about this work, please see our papers.
 
 [Download SFU Opinion and Comments Corpus](https://researchdata.sfu.ca/islandora/object/islandora%3A9109)
 
-The data is divided into two main parts, with the annotated portion being, in turn, divided into three portions: 
+The data is divided into two main parts, with each part being, in turn, divided into three portions: 
 - [Raw data](#raw)
-  - The articles corpus (gnm_articles.csv)
-  - The comments corpus (gnm_comments.csv)
-  - The comment-threads corpus (gnm_comment_threads.csv)
+  - [The articles corpus](#articles)
+  - [The comments corpus](#comments)
+  - [The comment-threads corpus](#comment_threads)
 - [Annotated data](#annotated)
   - [SFU constructiveness and toxicity corpus](#constructiveness)
   - [SFU negation corpus](#negation)
@@ -27,7 +27,7 @@ The data is divided into two main parts, with the annotated portion being, in tu
 # <a name="raw"></a>Raw data 
 The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 303,665 comment threads, from the main Canadian daily in English, <em>The Globe and Mail</em>, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
 
-## gnm_articles.csv
+## <a name="articles"></a>gnm_articles.csv
 
 <br>
 This CSV contains information about The Globe and Mail articles in our dataset. Below we describe fields in this CSV.
@@ -56,7 +56,7 @@ The number of top-level comments in the comments corpus for this article.
 <b>article_text</b><br>
 The article text. We have preserved the paragraph structure in the text with paragraph tags. 
 
-## gnm_comments.csv <br>
+## <a name="comments"></a> gnm_comments.csv <br>
 The CSV contains all unique comments (663,173 comments) in response to the articles in articles.csv after removing duplicates and comments with large overlap. The corpus is useful to study individual comments, i.e., without considering their location in the comment thread structure. Below we describe fields in this CSV.
 
 <b>article_id</b><br>
@@ -151,7 +151,7 @@ Not sure. A Field from the scraped comments JSON. Guess: Whether the comment is 
 <b>status</b><br>
 The status of the comment (e.g., published, rejected, deleted)
 
-## gnm_comment_threads.csv <br>
+## <a name="comment_threads"></a> gnm_comment_threads.csv <br>
 This CSV contains all unique comment threads -- a total of 303,665 unique comment threads in response to the articles in the gnm_articles.csv. This CSV can be used to study online conversations.
 
 The fields in this CSV are same as that of gnm_comments.csv.
