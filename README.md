@@ -11,11 +11,10 @@ For more information about this work, please see our papers.
 
 The data is divided into two main parts: 
 - [Raw data](#raw)
-- Annotated data
-  - SFU constructiveness and toxicity corpus
-  - [SFU Appraisal corpus](#sfu-appraisal-corpus)
-  - SFU negation corpus
-
+- [Annotated data](#annotated)
+  - [SFU constructiveness and toxicity corpus](#constructiveness)
+  - [SFU negation corpus](#negation)
+  - [SFU Appraisal corpus](#appraisal)
 
 
 # <a name="raw"></a>Raw data 
@@ -152,7 +151,7 @@ The fields in this CSV are same as that of gnm_comments.csv.
 
 # <a name="annotated"></a>Annotated data
 
-## SFU constructiveness and toxicity corpus
+## <a name="constructiveness"></a>SFU constructiveness and toxicity corpus
 
 We annotated a subset of SOCC for constructiveness and toxicity. The annotated corpus is organized as a CSV and contains 1,043 annotated comments in responses to 10 different articles covering a variety of subjects: technology, immigration, terrorism, politics, budget, social issues, religion, property, and refugees. For half of the articles, we included only top-level comments. For the other half, we included both top-level comments and responses. We used CrowdFlower (https://www.crowdflower.com/) as our crowdsourcing annotation platform and annotated the comments for constructiveness. We asked the annotators to first read the articles, and then to tell us whether the displayed comment was constructive or not. 
 
@@ -211,13 +210,13 @@ Expert's judgement on the toxicity level of the comment.
 <b>expert_comments</b><br>
 Expert's free text comments on crowd's annotations. 
 
-## SFU Appraisal corpus
-
-The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
+## <a name="negation"></a>SFU negation corpus
+The negation annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
 The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
 
-## SFU negation corpus
-The negation annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
+## <a name="appraisal"></a>SFU Appraisal corpus
+
+The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
 The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
 
 
