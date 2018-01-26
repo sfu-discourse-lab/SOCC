@@ -212,11 +212,13 @@ Expert's free text comments on crowd's annotations.
 
 ## <a name="negation"></a>SFU negation corpus
 The negation annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page.
+
 The guidelines directory contains a full description of the annotation guidelines. The annotations are made available as a project in .tsv files from WebAnno.
+
 The WebAnno directory is structured in folders. Each folder is named with a comment ID (the same as in the raw corpus), and inside is a .tsv file with the annotations. The annotations were exported from WebAnno in CoNLL format. The annotations can be viewed from the .tsv files using a document viewer, and can also be imported back into WebAnno, a process which we detail in the WebAnno instructions (see link above).
 
 ## <a name="appraisal"></a>SFU Appraisal corpus
 
-The Appraisal annotations were performed using WebAnno. You can see [WebAnno server installation instructions](https://github.com/sfu-discourse-lab/WebAnno) on our GitHub page. The structure of the corpus is identical to that of the negation corpus. 
+The Appraisal annotations were performed using WebAnno. The structure of the corpus is identical to that of the negation corpus. Guidelines for Appraisal annotation are available in the guidelines directory.
 
 
