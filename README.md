@@ -9,6 +9,11 @@ For more information about this work, please see our papers.
 
 - Kolhatkar, V. and M. Taboada (2017) [Constructiveness in news comments](http://aclweb.org/anthology/W17-3002). [Proceedings of the 1st Abusive Language Online Workshop](https://sites.google.com/site/abusivelanguageworkshop2017/), 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17.
 
+# Download link and data
+You can download the corpus by clicking on the following.  
+
+[Download SFU Opinion and Comments Corpus](https://researchdata.sfu.ca/islandora/object/islandora%3A9109)
+
 The data is divided into two main parts, with the annotated portion being, in turn, divided into three portions: 
 - [Raw data](#raw)
 - [Annotated data](#annotated)
