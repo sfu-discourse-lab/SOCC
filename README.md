@@ -166,7 +166,6 @@ For toxicity, we asked annotators a multiple-choice question, *How toxic is the 
 More information on the annotation, and the instructions to annotators, is available in the CrowdFlower_instructions file. 
 
 ## SFU_constructiveness_toxicity_corpus.csv
-Here is the column 
 <b>article_id</b><br>
 A unique identifier for the article. This identifier can be used to link the comment to the appropriate article from gnm_articles.csv in the raw corpus.
 
