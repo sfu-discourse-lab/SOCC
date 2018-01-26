@@ -15,6 +15,9 @@ For more information about this work, please see our papers.
 
 The data is divided into two main parts, with the annotated portion being, in turn, divided into three portions: 
 - [Raw data](#raw)
+  - The articles corpus (gnm_articles.csv)
+  - The comments corpus (gnm_comments.csv)
+  - The comment-threads corpus (gnm_comment_threads.csv)
 - [Annotated data](#annotated)
   - [SFU constructiveness and toxicity corpus](#constructiveness)
   - [SFU negation corpus](#negation)
