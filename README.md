@@ -25,7 +25,7 @@ The data is divided into two main parts, with the annotated portion being, in tu
 
 
 # <a name="raw"></a>Raw data 
-The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 304,099 comment threads, from the main Canadian daily in English, <em>The Globe and Mail</em>, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
+The corpus contains 10,339 opinion articles (editorials, columns, and op-eds) together with their 663,173 comments from 303,665 comment threads, from the main Canadian daily in English, <em>The Globe and Mail</em>, for a five-year period (from January 2012 to December 2016). We organize our corpus into three sub-corpora: the articles corpus, the comments corpus, and the comment-threads corpus, organized into three CSV files: gnm_articles.csv, gnm_comments.csv, and gnm_comment_threads.csv. 
 
 ## gnm_articles.csv
 
@@ -152,7 +152,7 @@ Not sure. A Field from the scraped comments JSON. Guess: Whether the comment is 
 The status of the comment (e.g., published, rejected, deleted)
 
 ## gnm_comment_threads.csv <br>
-This CSV contains all unique comment threads -- a total of 304,099 unique comment threads in response to the articles in the gnm_articles.csv. This CSV can be used to study online conversations.
+This CSV contains all unique comment threads -- a total of 303,665 unique comment threads in response to the articles in the gnm_articles.csv. This CSV can be used to study online conversations.
 
 The fields in this CSV are same as that of gnm_comments.csv.
 
