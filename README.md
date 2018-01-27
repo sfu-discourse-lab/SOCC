@@ -242,6 +242,6 @@ Spans that include multiple words are indexed in the same way that those in Nega
 
 # Contact
 
-[Varada Kolhatkar](vkolhatk@sfu.ca)
+Varada Kolhatkar (vkolhatk@sfu.ca)
 <br>
-[Maite Taboada](mtaboada@sfu.ca)
+Maite Taboada (mtaboada@sfu.ca)
