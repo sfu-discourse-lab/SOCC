@@ -239,3 +239,9 @@ The Appraisal annotations were performed using WebAnno. The structure of the cor
 The .tsv files for Appraisal have the category of Appraisal (i.e. Appreciation, Judgment, Affect) in the fourth column, its polarity (i.e. pos, neg, neu) in the fifth, the category of Graduation (i.e. Force, Focus) in the sixth, and the polarity of Graduation (e.g. up, down) in the seventh. For comments without Appraisal, there will only be three columns (the fourth and beyond will not appear). For comments without Graduation, there will be no sixth or seventh column. There are no comments with Graduation that lack Appraisal.
 
 Spans that include multiple words are indexed in the same way that those in Negation are. For example, a multi-word span of Appreciation might have the annotation Appreciation\[1] in the fourth column for each word it covers, while a single-word span of Appreciation would simply have Appreciation in the fourth column in that word's row.
+
+# Contact
+
+[Varada Kolhatkar](vkolhatk@sfu.ca)
+<br>
+[Maite Taboada](mtaboada@sfu.ca)
