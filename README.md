@@ -5,7 +5,7 @@ The SFU Opinion and Comments Corpus (SOCC) is a corpus for the analysis of onlin
 
 For more information about this work, please see our papers. 
 
-- Kolhatkar, V., H. Wu, L. Cavasso, E. Francis, K. Shukla and M. Taboada (under review) [The SFU Opinion and Comments Corpus: A corpus for the analysis of online news comments](www.sfu.ca/~mtaboada/docs/publications/Kolhatkar_etal_SOCC.pdf). Journal paper under review.
+- Kolhatkar, V., H. Wu, L. Cavasso, E. Francis, K. Shukla and M. Taboada (under review) [The SFU Opinion and Comments Corpus: A corpus for the analysis of online news comments](http://www.sfu.ca/~mtaboada/docs/publications/Kolhatkar_etal_SOCC.pdf). Journal paper under review.
 
 - Kolhatkar. V. and M. Taboada (2017) [Using New York Times Picks to identify constructive comments](https://aclanthology.info/pdf/W/W17/W17-4218.pdf). [Proceedings of the Workshop Natural Language Processing Meets Journalism](http://nlpj2017.fbk.eu/), Conference on Empirical Methods in Natural Language Processing. Copenhagen. September 2017.
 
