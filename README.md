@@ -9,7 +9,7 @@ For more information about this work, please see our papers.
 
 - Kolhatkar. V. and M. Taboada (2017) [Using New York Times Picks to identify constructive comments](https://aclanthology.info/pdf/W/W17/W17-4218.pdf). [Proceedings of the Workshop Natural Language Processing Meets Journalism](http://nlpj2017.fbk.eu/), Conference on Empirical Methods in Natural Language Processing. Copenhagen. September 2017.
 
-- Kolhatkar, V. and M. Taboada (2017) [Constructiveness in news comments](http://aclweb.org/anthology/W17-3002). [Proceedings of the 1st Abusive Language Online Workshop](https://sites.google.com/site/abusivelanguageworkshop2017/), 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17.
+- Kolhatkar, V. and M. Taboada (2017) [Constructive language in news comments](http://aclweb.org/anthology/W17-3002). [Proceedings of the 1st Abusive Language Online Workshop](https://sites.google.com/site/abusivelanguageworkshop2017/), 55th Annual Meeting of the Association for Computational Linguistics. Vancouver. August 2017, pp. 11-17.
 
 # Download link and data
 
