@@ -195,10 +195,10 @@ Crowd's annotation on constructiveness (yes, no, not sure)
 <b>is_constructive:confidence</b><br>
 Crowd's confidence (between 0 to 1.0) about the answer. In CrowdFlower terminology, each annotator has a trust level based on how they perform on the gold examples, and each answer has a confidence, which is a normalized score of the summation of the trusts associated with annotators.
 
-<b>toxic_level</b><br>
+<b>toxicity_level</b><br>
 Crowd's annotation on the toxicity level of the comment. Each comment was annotated by at least three annotators and so we are providing the first two popular answers and their associated confidence scores for toxicity level. If you want ground truth go with the first one, as it is the most popular answer.  
 
-<b>toxic_level:confidence</b><br>
+<b>toxicity_level:confidence</b><br>
 Crowd's confidence (between 0 to 1.0) about the answer.
 
 <b>did_you_read_the_article</b><br>
