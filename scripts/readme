@@ -1,1 +1,4 @@
 
+clean_comments.py removes lines beginning with '#' from curated files from a WebAnno project when given the path to a '.../curation' folder in an exported WebAnno project, assuming the project was exported in TSV format. This allows those TSVs to be read by the Pandas package in Python.
+
+combine_comments.py asks for a path to a folder containing the files cleaned by clean_comments.py and writes a new CSV of those annotations combined to a path of your choice. It also reorganizes the data so that each row represents one annotated span (in original files, each row represents a word). It also sorts the rows by their position in the comment (so that the comments can be read from top to bottom in order) and then by the size of the annotation (so that longer spans appear before shorter ones).
