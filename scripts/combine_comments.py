@@ -630,13 +630,15 @@ combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
                                                    appraisal_possnames,
                                                    appraisal_newheads,
                                                    appraisal_search_correspondences,
-                                                   verbose=('all_done', 'comment_start'))
+                                                   not_applicable='None',   # a string works better for R than an empty
+                                                   verbose=('all_done', 'comment_start'))                       # cell
 combined_appraisal_dataframe.to_csv(appraisal_writepath)
 
 combined_negation_dataframe = combine_annotations(negation_projectdirs,
                                                   negation_possnames,
                                                   negation_newheads,
                                                   negation_collabels,
+                                                  not_applicable='None',
                                                   negation=True,
                                                   verbose=('all_done', 'comment_start'))
 combined_negation_dataframe.to_csv(negation_writepath)
