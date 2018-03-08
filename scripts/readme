@@ -1,3 +1,4 @@
+rename_webanno.py renames all files in an unzipped WebAnno project to use the comment counter names used elsewhere for this project.
 
 clean_comments.py removes lines beginning with '#' from curated files from a WebAnno project when given the path to a '.../curation' folder in an exported WebAnno project, assuming the project was exported in TSV format. This allows those TSVs to be read by the Pandas package in Python.
 
