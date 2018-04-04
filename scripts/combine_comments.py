@@ -303,7 +303,9 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
         for i in range(len(allfoundwords)):
             if i - 1 in range(len(allfoundwords)):
                 # check if this word came right after the last one
-                if sentences[i - 1] == sentences[i] and charpositions[i - 1][-1] == (charpositions[i][0] - 1):
+                if sentences[i - 1] == sentences[i] and\
+                        (charpositions[i - 1][-1] == (charpositions[i][0] - 1) or\
+                         charpositions[i - 1][-1] == (charpositions[i][0])):
                     if not last_match:  # if this is not a continuation of the previous span
                         span_number = span_number + 1  # keep track of the number we're on (index of foundspans)
                         if layer == 'att' or layer == 'gra':
@@ -542,23 +544,25 @@ def simplify_dataframe(dataframe, newcols, correspondences,
     :return: a new dataframe with the same content as the one given in the first place, but reorganized by span
         rather than by word
     """
-    # find the labels to look for
+    # set verbosity
     if 'missingcol' in verbose:
         verbose_missingcol = True
     else:
         verbose_missingcol = False
+
+    # find the labels to look for
     labinds = getlabinds(dataframe, correspondences=correspondences, dfname=commentid, verbose=verbose_missingcol)
 
-    # search the old dataframe and create a list to later add rows to the empty one
+    # search the old dataframe and create a list to later add as rows to the empty one
     if 'label_done' in verbose:
         v_label_done = True
     else:
         v_label_done = False
     foundrows = []
     for i in range(len(correspondences)):
-        searchcolumn = correspondences[i][0]
+        searchcolumn = correspondences[i][0]        # which column to look in
         if searchcolumn in dataframe.columns:
-            searchlabels = labinds[searchcolumn]
+            searchlabels = labinds[searchcolumn]    # which labels to look for in that column
             for searchlabel in searchlabels:
                 foundstuff = lookup_label(dataframe,
                                           searchcolumn,
@@ -626,19 +630,33 @@ def combine_annotations(paths, possnames, newcols, correspondences,
 # try combine_annotations(testdirs,newcols,appraisal_search_correspondences)
 
 
-combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
-                                                   appraisal_possnames,
-                                                   appraisal_newheads,
-                                                   appraisal_search_correspondences,
-                                                   not_applicable='None',   # a string works better for R than an empty
-                                                   verbose=('all_done', 'comment_start'))                       # cell
-combined_appraisal_dataframe.to_csv(appraisal_writepath)
+if appraisal_projectpath:
+    combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
+                                                       appraisal_possnames,
+                                                       appraisal_newheads,
+                                                       appraisal_search_correspondences,
+                                                       not_applicable='None',   # a string works better for R than
+                                                       verbose=('all_done', 'comment_start'))           # an empty cell
+    if appraisal_writepath:
+        combined_appraisal_dataframe.to_csv(appraisal_writepath)
+        print("Appraisal dataframe exported.")
+    else:
+        print("Not exporting Appraisal project as no path was specified.")
+else:
+    print("Not combining Appraisal project as no path was specified.")
 
-combined_negation_dataframe = combine_annotations(negation_projectdirs,
-                                                  negation_possnames,
-                                                  negation_newheads,
-                                                  negation_collabels,
-                                                  not_applicable='None',
-                                                  negation=True,
-                                                  verbose=('all_done', 'comment_start'))
-combined_negation_dataframe.to_csv(negation_writepath)
+if negation_projectpath:
+    combined_negation_dataframe = combine_annotations(negation_projectdirs,
+                                                      negation_possnames,
+                                                      negation_newheads,
+                                                      negation_collabels,
+                                                      not_applicable='None',
+                                                      negation=True,
+                                                      verbose=('all_done', 'comment_start'))
+    if negation_writepath:
+        combined_negation_dataframe.to_csv(negation_writepath)
+        print("Negation dataframe exported.")
+    else:
+        print("Not exporting Negation project as no path was specified.")
+else:
+    print("Not combining Negation project as no path was specified.")
