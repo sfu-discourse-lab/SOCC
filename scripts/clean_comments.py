@@ -5,10 +5,12 @@ from smart_open import smart_open
 # set the directory of your exported project
 webanno_project = input("Path to exported WebAnno project: (e.g. 'C:/.../curation')")
 write_directory = input("Path to folder to write new TSVs to: (e.g. 'C:/.../clean_TSVs')")
+# note that if the folder you write to does not already exist, this may cause an error
+
 
 def getcontents(directory):
     """
-    Returns the file paths for all files in the specified path. Basically the same as glob.glob, but slightly changes
+    Returns the file paths for all files in the specified path. Basically the same as glob.glob, but adds a slash to
     the path and changes backslashes to forward slashes.
 
     :param directory: the path to a folder (without a '/' at the end)
@@ -35,16 +37,16 @@ for i in range(len(files1)):
 commonsource = webanno_project + '/'
 commonname = '/CURATION_USER.tsv'
 
-cleannames = [name[-(len(name) - len(commonsource)):] for name in files]
-cleannames = [name[:len(name) - len(commonname)] for name in cleannames]
+cleannames = [name[-(len(name) - len(commonsource)):] for name in files]    # get folder/CURATION_USER.tsv
+cleannames = [name[:len(name) - len(commonname)] for name in cleannames]    # cut out the /CURATION_USER.tsv part
+cleannames = [re.sub(r"\..*", "", name) for name in cleannames]             # strip the file extension
 cleannames = [name + '_cleaned.tsv' for name in cleannames]
 
 # generate new directories for cleaned files
-cleandirs = [write_directory + '/' + name for name in cleannames]
+cleandirs = [write_directory.replace('\\', '/') + '/' + name for name in cleannames]
 
 
 # actually clean those comments
-
 def cleancomment(path):
     """
     Cleans a file of any lines beginning with '#' - these lines prevent the file from being read properly into a Pandas
