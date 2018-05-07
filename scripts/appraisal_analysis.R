@@ -1,15 +1,14 @@
 # code is still in development
 
-library(readr)
-library(tokenizers)
-library(ggplot2)
-library(reshape2)
-library(viridis)
+library(tokenizers)   # used to re-calculate number of words for graphs
+library(ggplot2)      # makes graphs
+library(reshape2)     # prepares data for graphing
+library(viridis)      # color schemes for graphs
 
 ###### Getting the annotation dataframes ######
 # Read file
-appraisal.annotations <- read_csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/corrected_combined_appraisal_comments.csv")
-negation.annotations <- read_csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/combined_negation_comments.csv")
+appraisal.annotations <- read.csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/combined_appraisal_comments.csv")
+negation.annotations <- read.csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/combined_negation_comments.csv")
 
 # remove the extra column
 appraisal.annotations <- appraisal.annotations[,2:length(appraisal.annotations)]
@@ -19,9 +18,49 @@ negation.annotations <- negation.annotations[,2:length(negation.annotations)]
 mismatches = subset(appraisal.annotations,
                     appraisal.annotations$attlab == "*" | appraisal.annotations$attpol == "*" | appraisal.annotations$gralab == "*" | appraisal.annotations$grapol == "*")
 
+###### Overlaying negation ######
+## check that all comment names match
+appraisal.comments = unique(as.character(appraisal.annotations$comment))
+negation.comments = unique(as.character(negation.annotations$comment))
+comment.matching = data.frame(comment = c(appraisal.comments, negation.comments),
+                              appraisal = NA,
+                              negation = NA)
+comment.matching$appraisal = comment.matching$comment %in% appraisal.comments
+comment.matching$negation = comment.matching$comment %in% negation.comments
+comment.matching$both = comment.matching$appraisal && comment.matching$negation
+
+# comments not in both
+# subset(comment.matching, !both)
+# comments in only appraisal
+# subset(comment.matching, appraisal & !negation)
+# comments in only negation
+# subset(comment.matching, !appraisal & negation)
+# All of those subsets have no rows, so all comments in one df are in the other.
+
+## add in a column to appraisal.annotations to show whether there is a NEG keyword in the span
+appraisal.annotations$NEG = FALSE
+negdf = subset(negation.annotations, label=='NEG')
+
+# Mark $NEG as TRUE if there's a NEG keyword there
+for (i in 1:length(negdf$label))
+{
+  appdf = appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]
+  for (j in 1:length(appdf$comment))
+  {
+    if (negdf$charend[i] > appdf$charstart[j] & negdf$charend[i] <= appdf$charend[j])
+    {
+      appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]$NEG[j] = TRUE
+    }
+  }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(negdf$label))
+}
+close(bar)
+
 ###### Getting basic counts ######
 # So that we can count them later, get subsets of "appraisal.annotations" by label
 # Attitude labels
+attrows = subset(appraisal.annotations, attlab != "None")
 approws = appraisal.annotations[appraisal.annotations$attlab=="Appreciation",]
 judrows = appraisal.annotations[appraisal.annotations$attlab=="Judgment",]
 affrows = appraisal.annotations[appraisal.annotations$attlab=="Affect",]
@@ -30,12 +69,14 @@ posrows = appraisal.annotations[appraisal.annotations$attpol=="pos",]
 negrows = appraisal.annotations[appraisal.annotations$attpol=="neg",]
 neurows = appraisal.annotations[appraisal.annotations$attpol=="neu",]
 # Graduation labels
+grarows = subset(appraisal.annotations, gralab != "None")
 forcerows = appraisal.annotations[appraisal.annotations$gralab=="Force",]
 focusrows = appraisal.annotations[appraisal.annotations$gralab=="Focus",]
 # Graduation polarities
 upgradrows = appraisal.annotations[appraisal.annotations$grapol=="up",]
 downgradrows = appraisal.annotations[appraisal.annotations$grapol=="down",]
 
+## Appraisal
 # get simple counts
 # Attitude labels
 appcount = length(approws$attlab)
@@ -53,44 +94,86 @@ upgradcount = length(upgradrows$grapol)
 downgradcount = length(downgradrows$grapol)
 
 # Make dataframes to put counts of matched labels and polarities in
-attcounts = data.frame(row.names = c("neg", "pos", "neu"))
-gracounts = data.frame(row.names = c("up", "down"))
+attcounts = data.frame(row.names = c("neg", "pos", "neu", "total"))
+gracounts = data.frame(row.names = c("up", "down", "total"))
 
 # put in counts for Attitude
 attcounts$appreciation = c(
   length(approws[approws$attpol=="neg",]$attlab),  # count of negative appreciation
   length(approws[approws$attpol=="pos",]$attlab),  # count of positive appreciation
-  length(approws[approws$attpol=="neu",]$attlab)   # count of neutral appreciation
+  length(approws[approws$attpol=="neu",]$attlab),  # count of neutral appreciation
+  length(approws$attlab)                           # count of all appreciation
 )
 
 attcounts$judgment = c(
   length(judrows[judrows$attpol=="neg",]$attlab),
   length(judrows[judrows$attpol=="pos",]$attlab),
-  length(judrows[judrows$attpol=="neu",]$attlab)
+  length(judrows[judrows$attpol=="neu",]$attlab),
+  length(judrows$attlab)
 )
 
 attcounts$affect = c(
   length(affrows[affrows$attpol=="neg",]$attlab),
   length(affrows[affrows$attpol=="pos",]$attlab),
-  length(affrows[affrows$attpol=="neu",]$attlab)
+  length(affrows[affrows$attpol=="neu",]$attlab),
+  length(affrows$attlab)
 )
+
+attcounts$total = attcounts$appreciation + attcounts$judgment + attcounts$affect
 
 # put in counts for Graduation
 gracounts$force = c(
   length(forcerows[forcerows$grapol=="up",]$gralab),
-  length(forcerows[forcerows$grapol=="down",]$gralab)
+  length(forcerows[forcerows$grapol=="down",]$gralab),
+  length(forcerows$gralab)
 )
 
 gracounts$focus = c(
   length(focusrows[focusrows$grapol=="up",]$gralab),
-  length(focusrows[focusrows$grapol=="down",]$gralab)
+  length(focusrows[focusrows$grapol=="down",]$gralab),
+  length(focusrows$gralab)
 )
 
-###### Finding stacked spans and graduation ######
+gracounts$total = gracounts$force + gracounts$focus
+
+## Negation
+negcounts = data.frame( row.names = c("neg", "pos", "neu", "all pols"))
+# a function to count the percentage of spans with negation given a DF
+countnegs <- function(df){
+  length(rownames(subset(df, NEG == TRUE))) / length(rownames(df))
+}
+# get the counts
+negcounts$app = c(
+  countnegs(subset(approws, attpol == "neg")),
+  countnegs(subset(approws, attpol == "pos")),
+  countnegs(subset(approws, attpol == "neu")),
+  countnegs(approws)
+)
+negcounts$jud = c(
+  countnegs(subset(judrows, attpol == "neg")),
+  countnegs(subset(judrows, attpol == "pos")),
+  countnegs(subset(judrows, attpol == "neu")),
+  countnegs(judrows)
+)
+negcounts$aff = c(
+  countnegs(subset(affrows, attpol == "neg")),
+  countnegs(subset(affrows, attpol == "pos")),
+  countnegs(subset(affrows, attpol == "neu")),
+  countnegs(affrows)
+)
+negcounts$all.labs = c(
+  countnegs(subset(attrows, attpol == "neg")),
+  countnegs(subset(attrows, attpol == "pos")),
+  countnegs(subset(attrows, attpol == "neu")),
+  countnegs(attrows)
+)
+
+###### Finding stacked spans ######
 
 # find stacked spans
+print("Looking for stacked spans.")
 stacks = appraisal.annotations[0,]
-look = 10     # how far ahead to look
+look = 7     # how far ahead to look
 punctuation = c(".", ",", "!", "?")
 for(i in 1:length(appraisal.annotations$span))
 {
@@ -108,13 +191,17 @@ for(i in 1:length(appraisal.annotations$span))
       }
     }
   }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(appraisal.annotations$span))
 }
+close(bar)
 stacks = unique(stacks)
 stacks = stacks[order(stacks$comment, stacks$charstart),]
 
 # get a data.frame of all spans with graduation and the attitude spans that contain them
+print("Looking for stacked graduation.")
 graduation = stacks[0,]
-look = 10     # how far ahead to look
+look = 6     # how far ahead to look
 for(i in 1:length(stacks$span))
 {
   for(n in 1:look)
@@ -146,7 +233,10 @@ for(i in 1:length(stacks$span))
       }
     }
   }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(stacks$span))
 }
+close(bar)
 
 graduation = unique(graduation)
 graduation = graduation[order(graduation$comment, graduation$charstart),]
@@ -187,7 +277,10 @@ for(i in 1:length(candidates$span))
       }
     }
   }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(candidates$span))
 }
+close(bar)
 
 graduation$belongs_to = 0
 for(i in 1:length(candidates$span))
@@ -204,7 +297,10 @@ for(i in 1:length(candidates$span))
       }
     }
   }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(candidates$span))
 }
+close(bar)
 
 # find graduation spans with ambiguous scopes
 graduation.ambig = graduation[0,]
@@ -227,7 +323,10 @@ for(i in 1:length(graduation$span))
       }
     }
   }
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(graduation$span))
 }
+close(bar)
 
 graduation.ambig = unique(graduation.ambig)
 # order the rows properly
@@ -276,6 +375,7 @@ comment.counts$focusdown = NA
 
 ### then fill them in
 ## starting with basic counts
+
 for (i in 1:length(comment.counts$comment)){
   # subset the dataframe
   df = appraisal.annotations[appraisal.annotations$comment == comment.counts$comment[i],]
@@ -322,7 +422,10 @@ for (i in 1:length(comment.counts$comment)){
                                           df$grapol == 'up',]$gralab)
   comment.counts$focusdown[i] = length(df[df$gralab == 'Focus' &
                                             df$grapol == 'down',]$gralab)
+  bar = txtProgressBar(style=3)
+  setTxtProgressBar(bar, value=i/length(comment.counts$comment))
 }
+close(bar)
 
 ## aggregate info
 comment.counts$app = comment.counts$appneg + comment.counts$apppos + comment.counts$appneu
@@ -354,25 +457,13 @@ comment.counts$focuspct = comment.counts$focus/comment.counts$gra
 comment.counts$uppct = comment.counts$up/comment.counts$gra
 comment.counts$downpct = comment.counts$down/comment.counts$gra
 
-###### Adding in negation ######
-# check that all comment names match
-appraisal.comments = unique(appraisal.annotations$comment)
-negation.comments = unique(negation.annotations$comment)
-comment.matching = data.frame(comment = c(appraisal.comments, negation.comments),
-                              appraisal = NA,
-                              negation = NA)
-comment.matching$appraisal = comment.matching$comment %in% appraisal.comments
-comment.matching$negation = comment.matching$comment %in% negation.comments
-comment.matching$both = comment.matching$appraisal && comment.matching$negation
+###### Analyzing negation ######
 
-mask.app = appraisal.comments %in% negation.comments
-mask.neg = negation.comments %in% appraisal.comments
-# comments in both appraisal and negation
-# appraisal.comments[mask.app]
-# comments in only appraisal
-# appraisal.comments[!mask.app]
-# comments in only negation
-# negation.comments[!mask.neg]
+
+## What percent of evaluative spans have negation?
+# Rows with any attitude
+length(rownames(subset(attrows, NEG == TRUE))) / length(rownames(attrows))
+# 0.1298505
 
 ###### Visualization #####
 # often need to reshape the comment counts so that they work with ggplot; melt() does this
@@ -380,6 +471,8 @@ mask.neg = negation.comments %in% appraisal.comments
 ## aesthetic variable setting:
 fill.alpha = .5
 line.color = "black" # used for histograms
+txtsize = 28
+palette = viridis(n=3, option= "plasma")
 ##### By comment #####
 #### General plots per word ####
 df = subset(comment.counts, select = c("comment"))
@@ -401,17 +494,21 @@ ggplot(data=df,mapping=aes(value, fill = variable, color = line.color)) +
   geom_histogram(data = df[df$variable=="pospct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
   geom_histogram(data = df[df$variable=="negpct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
   geom_histogram(data = df[df$variable=="neupct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
-  labs(title = "Polarity by comment", x = "Percentage") +
+  labs(title = "Attitude polarity by comment", x = "Percentage") +
   scale_fill_discrete(name="Polarity",
                       breaks=c("pospct", "negpct", "neupct"),
-                      labels=c("Positive", "Negative", "Neutral"))
+                      labels=c("Positive", "Negative", "Neutral")) +
+  theme(text = element_text(size=txtsize))
+
 # as density plot
 ggplot(data=df,mapping=aes(value, fill = variable)) +
   geom_density(alpha = fill.alpha, bw =.025) +
-  labs(title = "Polarity by comment", x = "Percentage") +
-  scale_fill_discrete(name="Polarity",
-                      breaks=c("pospct", "negpct", "neupct"),
-                      labels=c("Positive", "Negative", "Neutral"))
+  labs(title = "Attitude polarity by comment", x = "Percentage") +
+  scale_fill_manual(name="Polarity",
+                    values = palette,
+                    breaks=c("negpct", "pospct", "neupct"),
+                    labels=c("Negative", "Positive", "Neutral")) +
+  theme(text = element_text(size=txtsize))
 
 ## Same plot, but looking only at comments with neu
 df = subset(comment.counts, select = c("comment", "pospct", "negpct", "neupct"))
@@ -425,14 +522,18 @@ ggplot(data=df,mapping=aes(value)) +
   labs(title = "Polarity by comment", x = "Percentage") +
   scale_fill_discrete(name = "Polarity",
                       breaks=c("pospct", "negpct", "neupct"),
-                      labels=c("Positive", "Negative", "Neutral"))
+                      labels=c("Positive", "Negative", "Neutral")) +
+  theme(text = element_text(size=txtsize))
+
 # as density plot
 ggplot(data=df,mapping=aes(value, fill = variable)) +
   geom_density(alpha = fill.alpha) +
-  labs(title = "Polarity by comment", x = "Percentage") +
-  scale_fill_discrete(name="Polarity",
-                      breaks=c("pospct", "negpct", "neupct"),
-                      labels=c("Positive", "Negative", "Neutral"))
+  labs(title = "Attitude polarity by comment, only comments with neutral spans", x = "Percentage") +
+  scale_fill_manual(name="Polarity",
+                    values = palette,
+                    breaks=c("negpct", "pospct", "neupct"),
+                    labels=c("Negative", "Positive", "Neutral")) +
+  theme(text = element_text(size=txtsize))
 
 ## Ignoring neutral spans, positive pct - negative pct
 # attempts to further answer whether comments favor one polarity of span
@@ -440,7 +541,8 @@ df = subset(comment.counts, select = c("comment", "pos", "neg"))
 df = df[df$pos > 0 | df$neg > 0,]   # filters out comments with no pos or neg spans
 df$posratio = (df$pos/(df$pos + df$neg) - df$neg/(df$pos + df$neg))
 ggplot(mapping=aes(df$posratio)) + geom_density(fill = "purple", alpha = fill.alpha) +
-  labs(title = "Positivity of comment attitudes", x="percent of positive spans minus percent of negative spans")
+  labs(title = "Positivity of comment attitudes", x="percent of positive spans minus percent of negative spans") +
+  theme(text = element_text(size=txtsize))
 
 ## Percentages of attitude label
 # this gives an idea of how prevalent the different labels are
@@ -448,7 +550,15 @@ df = subset(comment.counts, select = c("comment", "apppct", "judpct", "affpct"))
 df = df[df$apppct > 0 | df$judpct > 0,]   # filters out comments with no app or jud spans
 df = melt(df)
 # as density plot
-ggplot(data=df,mapping=aes(value, fill=variable)) + geom_density(alpha = fill.alpha)
+ggplot(data=df,mapping=aes(value, fill=variable)) +
+  geom_density(alpha = fill.alpha) +
+  labs(title = "Attitude label by comment", x = "Percentage") +
+  scale_fill_manual(name="Label",
+                    values = palette,
+                    breaks=c("apppct", "judpct", "affpct"),
+                    labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
+
 # as histogram
 ggplot(data=df,mapping=aes(value)) +
   geom_histogram(data = df[df$variable=="apppct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
@@ -457,7 +567,8 @@ ggplot(data=df,mapping=aes(value)) +
   labs(title = "Polarity by comment") +
   scale_fill_discrete(name="Polarity",
                       breaks=c("apppct", "judpct", "affpct"),
-                      labels=c("Appreciation", "Judgment", "Affect"))
+                      labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
 
 ## Same thing but without affect:
 # lets us see that judgment and appreciation have similar distributions
@@ -469,11 +580,36 @@ ggplot(data=df,mapping=aes(value)) +
   geom_histogram(data = df[df$variable=="apppct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
   geom_histogram(data = df[df$variable=="judpct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
   labs(title = "Type of Attitude by comment") +
-  scale_fill_discrete(name="Attitude type",
-                      breaks=c("apppct", "judpct", "affpct"),
-                      labels=c("Appreciation", "Judgment", "Affect"))
+  scale_fill_manual(name="Label",
+                    values = palette,
+                    breaks=c("apppct", "judpct", "affpct"),
+                    labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
+
 # as density plot
-ggplot(data=df,mapping=aes(value, fill=variable)) + geom_density(alpha = fill.alpha)
+ggplot(data=df,mapping=aes(value, fill=variable))  +
+  geom_density(alpha = fill.alpha) +
+  labs(title = "Attitude label by comment, affect excluded", x = "Percentage") +
+  scale_fill_manual(name="Label",
+                    values = palette,
+                    breaks=c("apppct", "judpct", "affpct"),
+                    labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
+
+## Ignoring affect, apprec pct - jud pct
+# attempts to further answer whether comments favor one polarity of span
+df = subset(comment.counts, select = c("comment", "app", "jud"))
+df = df[df$app > 0 | df$jud > 0,]   # filters out comments with no app or jud spans
+df$appratio = (df$app/(df$app + df$jud) - df$jud/(df$app + df$jud))
+# density plot
+ggplot(mapping=aes(df$appratio)) + geom_density(fill = "purple", alpha = fill.alpha) +
+  labs(title = "Preference of comments for Appreciation over Judgment", x="percent of Appreciation spans minus percent of Judgment spans") +
+  theme(text = element_text(size=txtsize))
+# histogram with few bins
+ggplot(data=df,mapping=aes(appratio)) +
+  geom_histogram(color = line.color, fill="purple", alpha = fill.alpha, bins=7) +
+  labs(title = "Preference of comments for Appreciation over Judgment", x="percent of Appreciation spans minus percent of Judgment spans") +
+  theme(text = element_text(size=txtsize))
 
 ## Same idea, but looking only at comments with affect (so with affect included)
 # shows that even in comments with affect, the percentage is low, and there's about even amounts of judgment and appreciation
@@ -488,9 +624,17 @@ ggplot(data=df,mapping=aes(value)) +
   labs(title = "Polarity by comment") +
   scale_fill_discrete(name="Polarity",
                       breaks=c("apppct", "judpct", "affpct"),
-                      labels=c("Appreciation", "Judgment", "Affect"))
+                      labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
 # as density plot
-ggplot(data=df,mapping=aes(value, fill=variable)) + geom_density(alpha = fill.alpha)
+ggplot(data=df,mapping=aes(value, fill=variable))  +
+  geom_density(alpha = fill.alpha) +
+  labs(title = "Attitude label by comment, only comments with affect", x = "Percentage") +
+  scale_fill_manual(name="Label",
+                    values = palette,
+                    breaks=c("apppct", "judpct", "affpct"),
+                    labels=c("Appreciation", "Judgment", "Affect")) +
+  theme(text = element_text(size=txtsize))
 
 #### Graduation ####
 # A smaller df with only comments that have graduation
@@ -502,7 +646,8 @@ df = graduation.comment.counts[graduation.comment.counts$forcepct > 0 | graduati
 difference = df$forcepct - df$focuspct
 # as density plot
 ggplot(mapping=aes(difference)) + geom_density(fill = "purple", alpha = fill.alpha) +
-  labs(title = "Tendency towards Force in Graduation, by comment", x = "Percent of Force spans - percent of Focus spans")
+  labs(title = "Preference for Force in Graduation, by comment", x = "Percent of Force spans - percent of Focus spans") +
+  theme(text = element_text(size=txtsize))
 # as histogram
 ggplot(mapping=aes(difference)) + geom_histogram() +
   labs(title = "Tendency towards Force in Graduation, by comment", x = "Percent of Force spans - percent of Focus spans")
@@ -512,13 +657,15 @@ ggplot(mapping=aes(difference)) + geom_histogram() +
 df = graduation.comment.counts[graduation.comment.counts$uppct > 0 | graduation.comment.counts$downpct > 0,]   # filters out comments with no Force/Focus
 difference = df$uppct - df$downpct
 ggplot(mapping=aes(difference)) + geom_density(fill = "purple", alpha = fill.alpha) +
-  labs(title = "Tendency towards upwards Graduation, by comment", x = "Percent of upward Graduation - percent of downward Graduation")
+  labs(title = "Tendency towards upwards Graduation, by comment", x = "Percent of upward Graduation - percent of downward Graduation") +
+  theme(text = element_text(size=txtsize))
 
 ##### Correlations #####
 # Correlation between tendency for negativity and tendency for appreciation
 df = subset(comment.counts, select = c("comment", "pospct", "negpct", "judpct", "apppct"))
 df$negtend = df$pospct - df$negpct
 df$apptend = df$apppct - df$judpct
+df <- subset(df, !is.na(negtend) & !is.na(apptend))
 cor(df$negtend, df$apptend)
 
 # Correlation between tendency for force and tendency for up
@@ -532,3 +679,4 @@ write.csv(comment.counts, paste(export.folder,'comment_counts.csv'))
 write.csv(graduation.ambig, paste(export.folder, 'ambiguous_graduation.csv'))
 write.csv(attcounts, paste(export.folder, 'attitude_counts.csv'))
 write.csv(gracounts, paste(export.folder, 'graduation_counts.csv'))
+write.csv(negcounts, paste(export.folder, 'negation_counts.csv'))
