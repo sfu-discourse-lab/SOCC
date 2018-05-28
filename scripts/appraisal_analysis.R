@@ -457,6 +457,62 @@ comment.counts$focuspct = comment.counts$focus/comment.counts$gra
 comment.counts$uppct = comment.counts$up/comment.counts$gra
 comment.counts$downpct = comment.counts$down/comment.counts$gra
 
+## Graduation/att
+comment.counts$gra.att = comment.counts$gra/comment.counts$att
+
+#### Count details ####
+### Att polarity
+## pos vs neg
+comment.counts$posratio = (comment.counts$pos/(comment.counts$pos + comment.counts$neg) -
+                             comment.counts$neg/(comment.counts$pos + comment.counts$neg))
+comment.counts$catpos = comment.counts$posratio > 0
+comment.counts$catneg = comment.counts$posratio < 0
+# how many negative spans in positive comments?
+df = subset(comment.counts, catpos, select = c('comment', 'pos', 'neg', 'neu', 'catpos'))
+length(df$comment)
+# 134 total comments
+sum(df$neg) + sum(df$pos)
+# 797 total neg or pos spans
+sum(df$neg)
+# 219 = 27% neg in pos comments
+sum(df$pos)
+# 578 = 73% pos in pos comments
+sum(df$neu)
+# 10 neu in pos comments
+
+# how many positive spans in negative comments?
+df = subset(comment.counts, catneg, select = c('comment', 'pos', 'neg', 'neu', 'catneg'))
+length(df$comment)
+# 823 total comments
+sum(df$neg) + sum(df$pos)
+# 5394 pos or neg spans
+sum(df$pos)
+# 928 = 17% pos in neg comments
+sum(df$neg)
+# 4466 = 83% neg in neg comments
+
+## comments with neu
+df = subset(comment.counts, select = c("comment", "pospct", "negpct", "neupct",'catpos','catneg'))
+df = df[df$neupct > 0,]   # filters out comments with no neu spans
+# how many are there?
+length(df$comment)
+# 168
+# how many totally positive (aside from neu)?
+length(subset(df, negpct == 0)$comment)
+# 3 = 2%
+# how many are mostly positive?
+length(subset(df, catpos)$comment)
+# 24 = 14%
+# mostly negative?
+length(subset(df,catneg)$comment)
+# 117 = 67%
+# totally negative (aside from neu)?
+length(subset(df, pospct == 0)$comment)
+# 16 = 10%
+# truly balanced?
+length(subset(df,!catpos & !catneg)$comment)
+# 15 = 9%
+
 ###### Analyzing negation ######
 
 
@@ -476,7 +532,7 @@ palette = viridis(n=3, option= "plasma")
 ##### By comment #####
 #### General plots per word ####
 df = subset(comment.counts, select = c("comment"))
-df$attrate = comment.counts$att/comment.counts$wordlength
+#df$attrate = comment.counts$att/comment.counts$wordlength
 df$grarate = comment.counts$gra/comment.counts$wordlength
 df = melt(df)
 # as density plot
@@ -514,6 +570,15 @@ ggplot(data=df,mapping=aes(value, fill = variable)) +
 df = subset(comment.counts, select = c("comment", "pospct", "negpct", "neupct"))
 df = df[df$neupct > 0,]   # filters out comments with no neu spans
 df = melt(df)
+# as density plot
+ggplot(data=df,mapping=aes(value, fill = variable)) +
+  geom_density(alpha = fill.alpha) +
+  labs(title = "Attitude polarity by comment, only comments with neutral spans", x = "Percentage") +
+  scale_fill_manual(name="Polarity",
+                    values = palette,
+                    breaks=c("negpct", "pospct", "neupct"),
+                    labels=c("Negative", "Positive", "Neutral")) +
+  theme(text = element_text(size=txtsize))
 # as histogram
 ggplot(data=df,mapping=aes(value)) +
   geom_histogram(data = df[df$variable=="pospct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
@@ -525,21 +590,21 @@ ggplot(data=df,mapping=aes(value)) +
                       labels=c("Positive", "Negative", "Neutral")) +
   theme(text = element_text(size=txtsize))
 
-# as density plot
-ggplot(data=df,mapping=aes(value, fill = variable)) +
-  geom_density(alpha = fill.alpha) +
-  labs(title = "Attitude polarity by comment, only comments with neutral spans", x = "Percentage") +
-  scale_fill_manual(name="Polarity",
-                    values = palette,
-                    breaks=c("negpct", "pospct", "neupct"),
-                    labels=c("Negative", "Positive", "Neutral")) +
+## looking only at comments with neu, pospct - negpct
+df = subset(comment.counts, neupct > 0, select = c("comment", "neupct", "posratio"))
+# density plot
+ggplot(mapping=aes(df$posratio)) + geom_density(fill = "purple", alpha = fill.alpha) +
+  labs(title = "Positivity of comment attitudes", x="percent of positive spans minus percent of negative spans") +
+  theme(text = element_text(size=txtsize))
+# histogram
+ggplot(mapping=aes(df$posratio)) + geom_histogram() +
+  labs(title = "Positivity of comment attitudes", x="percent of positive spans minus percent of negative spans") +
   theme(text = element_text(size=txtsize))
 
 ## Ignoring neutral spans, positive pct - negative pct
 # attempts to further answer whether comments favor one polarity of span
-df = subset(comment.counts, select = c("comment", "pos", "neg"))
+df = subset(comment.counts, select = c("comment", "pos", "neg", "posratio"))
 df = df[df$pos > 0 | df$neg > 0,]   # filters out comments with no pos or neg spans
-df$posratio = (df$pos/(df$pos + df$neg) - df$neg/(df$pos + df$neg))
 ggplot(mapping=aes(df$posratio)) + geom_density(fill = "purple", alpha = fill.alpha) +
   labs(title = "Positivity of comment attitudes", x="percent of positive spans minus percent of negative spans") +
   theme(text = element_text(size=txtsize))
@@ -575,21 +640,20 @@ ggplot(data=df,mapping=aes(value)) +
 df = subset(comment.counts, select = c("comment", "apppct", "judpct"))
 df = df[df$apppct > 0 | df$judpct > 0,]   # filters out comments with no app or jud spans
 df = melt(df)
-# as histogram
-ggplot(data=df,mapping=aes(value)) +
-  geom_histogram(data = df[df$variable=="apppct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
-  geom_histogram(data = df[df$variable=="judpct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
-  labs(title = "Type of Attitude by comment") +
+# as density plot
+ggplot(data=df,mapping=aes(value, fill=variable))  +
+  geom_density(alpha = fill.alpha) +
+  labs(title = "Attitude label by comment, affect excluded", x = "Percentage") +
   scale_fill_manual(name="Label",
                     values = palette,
                     breaks=c("apppct", "judpct", "affpct"),
                     labels=c("Appreciation", "Judgment", "Affect")) +
   theme(text = element_text(size=txtsize))
-
-# as density plot
-ggplot(data=df,mapping=aes(value, fill=variable))  +
-  geom_density(alpha = fill.alpha) +
-  labs(title = "Attitude label by comment, affect excluded", x = "Percentage") +
+# as histogram
+ggplot(data=df,mapping=aes(value)) +
+  geom_histogram(data = df[df$variable=="apppct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
+  geom_histogram(data = df[df$variable=="judpct",], color = line.color, aes(fill = variable), alpha = fill.alpha) +
+  labs(title = "Type of Attitude by comment") +
   scale_fill_manual(name="Label",
                     values = palette,
                     breaks=c("apppct", "judpct", "affpct"),
@@ -607,7 +671,7 @@ ggplot(mapping=aes(df$appratio)) + geom_density(fill = "purple", alpha = fill.al
   theme(text = element_text(size=txtsize))
 # histogram with few bins
 ggplot(data=df,mapping=aes(appratio)) +
-  geom_histogram(color = line.color, fill="purple", alpha = fill.alpha, bins=7) +
+  geom_histogram(color = line.color, fill="purple", alpha = fill.alpha, bins=9) +
   labs(title = "Preference of comments for Appreciation over Judgment", x="percent of Appreciation spans minus percent of Judgment spans") +
   theme(text = element_text(size=txtsize))
 
@@ -639,6 +703,28 @@ ggplot(data=df,mapping=aes(value, fill=variable))  +
 #### Graduation ####
 # A smaller df with only comments that have graduation
 graduation.comment.counts = comment.counts[comment.counts$gra > 0,]
+
+## Graduation per Attitude
+df = graduation.comment.counts$gra.att
+# density
+ggplot(mapping=aes(df)) + geom_density(fill = "purple", alpha = fill.alpha) +
+  labs(title = "Graduation spans per Attitude span", x = "Graduation spans per Attitude span") +
+  theme(text = element_text(size=txtsize))
+# hist
+ggplot(mapping=aes(df)) + geom_histogram(bins=20) +
+  labs(title = "Graduation spans per Attitude span", x = "Graduation spans per Attitude span") +
+  theme(text = element_text(size=txtsize))
+
+## Same, but looking only where gra/att < 1
+df = subset(graduation.comment.counts, gra.att < 1, select = c('comment', 'gra.att'))
+# density
+ggplot(mapping=aes(df$gra.att)) + geom_density(fill = "purple", alpha = fill.alpha) +
+  labs(title = "Graduation spans per Attitude span", x = "Graduation spans per Attitude span") +
+  theme(text = element_text(size=txtsize))
+# hist
+ggplot(mapping=aes(df$gra.att)) + geom_histogram() +
+  labs(title = "Graduation spans per Attitude span", x = "Graduation spans per Attitude span") +
+  theme(text = element_text(size=txtsize))
 
 ## Percent distribution of force and focus
 # Shows that there's only a slightly higher tendency to use only focus than mix it evenly with Force, and most use Force exclusively
