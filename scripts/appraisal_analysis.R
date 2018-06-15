@@ -5,10 +5,19 @@ library(ggplot2)      # makes graphs
 library(reshape2)     # prepares data for graphing
 library(viridis)      # color schemes for graphs
 
+# start global timer
+global.time = proc.time()
+
 ###### Getting the annotation dataframes ######
+# start timer
+timer = proc.time()
+
 # Read file
-appraisal.annotations <- read.csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/combined_appraisal_comments.csv")
-negation.annotations <- read.csv("~/_My Actual Folders/Research/Discourse Processing/socc_comments/combined_negation_comments.csv")
+setwd("C:/Users/lcava/Documents/_My Actual Folders/Research/Discourse Processing/socc_comments/re_downloaded")
+appraisal.annotations <- read.csv("combined_appraisal_comments.csv", stringsAsFactors=FALSE)
+negation.annotations <- read.csv("combined_negation_comments.csv", stringsAsFactors=FALSE)
+
+setwd("C:/Users/lcava/Documents/_My Actual Folders/Research/Discourse Processing/socc_comments/analysis")
 
 # remove the extra column
 appraisal.annotations <- appraisal.annotations[,2:length(appraisal.annotations)]
@@ -18,7 +27,17 @@ negation.annotations <- negation.annotations[,2:length(negation.annotations)]
 mismatches = subset(appraisal.annotations,
                     appraisal.annotations$attlab == "*" | appraisal.annotations$attpol == "*" | appraisal.annotations$gralab == "*" | appraisal.annotations$grapol == "*")
 
+# Add a column for whether there is an annotation or not
+appraisal.annotations$att = appraisal.annotations$attlab != "None" & appraisal.annotations$attpol != "None"
+appraisal.annotations$gra = appraisal.annotations$gralab != "None" & appraisal.annotations$grapol != "None"
+
+# check timer
+proc.time() - timer
+
 ###### Overlaying negation ######
+# start timer
+timer = proc.time()
+
 ## check that all comment names match
 appraisal.comments = unique(as.character(appraisal.annotations$comment))
 negation.comments = unique(as.character(negation.annotations$comment))
@@ -29,19 +48,22 @@ comment.matching$appraisal = comment.matching$comment %in% appraisal.comments
 comment.matching$negation = comment.matching$comment %in% negation.comments
 comment.matching$both = comment.matching$appraisal && comment.matching$negation
 
-# comments not in both
+# comments not in either
 # subset(comment.matching, !both)
 # comments in only appraisal
 # subset(comment.matching, appraisal & !negation)
 # comments in only negation
 # subset(comment.matching, !appraisal & negation)
-# All of those subsets have no rows, so all comments in one df are in the other.
+# aboriginal_16 and _17 are actually the same
+appraisal.annotations[appraisal.annotations$comment == 'aboriginal_16_cleaned.tsv',]$comment = 'aboriginal_17_cleaned.tsv'
+# With that adjustment, all of those subsets have no rows, so all comments in one df are in the other.
 
 ## add in a column to appraisal.annotations to show whether there is a NEG keyword in the span
 appraisal.annotations$NEG = FALSE
 negdf = subset(negation.annotations, label=='NEG')
 
 # Mark $NEG as TRUE if there's a NEG keyword there
+bar = txtProgressBar(style=3)
 for (i in 1:length(negdf$label))
 {
   appdf = appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]
@@ -49,15 +71,40 @@ for (i in 1:length(negdf$label))
   {
     if (negdf$charend[i] > appdf$charstart[j] & negdf$charend[i] <= appdf$charend[j])
     {
-      appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]$NEG[j] = TRUE
+      appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]$NEG[j] = T
     }
   }
-  bar = txtProgressBar(style=3)
   setTxtProgressBar(bar, value=i/length(negdf$label))
 }
 close(bar)
 
+## do the same thing for FOCUS
+appraisal.annotations$FOCUS = FALSE
+focusdf = subset(negation.annotations, label=='FOCUS')
+
+# Mark $FOCUS as TRUE if there's a FOCUS keyword there
+bar = txtProgressBar(style=3)
+for (i in 1:length(negdf$label))
+{
+  appdf = appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]
+  for (j in 1:length(appdf$comment))
+  {
+    if (negdf$charend[i] > appdf$charstart[j] & negdf$charend[i] <= appdf$charend[j])
+    {
+      appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]$FOCUS[j] = T
+    }
+  }
+  setTxtProgressBar(bar, value=i/length(negdf$label))
+}
+close(bar)
+
+# check timer
+proc.time() - timer
+
 ###### Getting basic counts ######
+# start timer
+timer = proc.time()
+
 # So that we can count them later, get subsets of "appraisal.annotations" by label
 # Attitude labels
 attrows = subset(appraisal.annotations, attlab != "None")
@@ -168,73 +215,216 @@ negcounts$all.labs = c(
   countnegs(attrows)
 )
 
+# check timer
+proc.time() - timer
+
+###### Getting counts based on article ######
+appraisal.annotations$article = NA
+bar = txtProgressBar(style=3)
+for (i in 1:length(appraisal.annotations$article)){
+  appraisal.annotations$article[i] = strsplit(appraisal.annotations$comment[i], '_')[[1]][1]
+  setTxtProgressBar(bar, value=i/length(appraisal.annotations$span))
+}
+close(bar)
+
+# create a df for article-based counts
+article.counts = data.frame(article = unique(appraisal.annotations$article))
+# fill it in
+article.counts$app = NA
+article.counts$jud = NA
+article.counts$aff = NA
+
+article.counts$pos = NA
+article.counts$neu = NA
+article.counts$neg = NA
+
+for (i in 1:length(article.counts$article)){
+  article.counts$app[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attlab == 'Appreciation')
+  article.counts$jud[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attlab == 'Judgment')
+  article.counts$aff[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attlab == 'Affect')
+  
+  article.counts$pos[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attpol == 'pos')
+  article.counts$neg[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attpol == 'neg')
+  article.counts$neu[i] = sum(subset(appraisal.annotations, article == article.counts$article[i])$attpol == 'neu')
+}
+
+# total Attitude
+article.counts$att = article.counts$app + article.counts$jud + article.counts$aff
+
+# Percentages of labels
+article.counts$apppct = article.counts$app/article.counts$att
+article.counts$judpct = article.counts$jud/article.counts$att
+article.counts$affpct = article.counts$aff/article.counts$att
+
+# Percentages of polarities
+article.counts$pospct = article.counts$pos/article.counts$att
+article.counts$negpct = article.counts$neg/article.counts$att
+article.counts$neupct = article.counts$neu/article.counts$att
+
 ###### Finding stacked spans ######
+# start timer
+timer = proc.time()
 
 # find stacked spans
 print("Looking for stacked spans.")
-stacks = appraisal.annotations[0,]
+appraisal.annotations$stacky = F
 look = 7     # how far ahead to look
-punctuation = c(".", ",", "!", "?")
+bar = txtProgressBar(style=3)
 for(i in 1:length(appraisal.annotations$span))
 {
   for(n in 1:look)
   {
+    # check that there is an appropriate next row to look at
     if (match(i+n, 1:length(appraisal.annotations$span), nomatch=FALSE))
     {
-      if(appraisal.annotations$charstart[i+n] <= appraisal.annotations$charend[i]  # if the charstart for the 'next' is less than charstart for this one
-         & appraisal.annotations$comment[i+n] == appraisal.annotations$comment[i]  # and the two are in the same comment
-         & !(appraisal.annotations$span[i] %in% punctuation)             # and this span is not just punctuation
-         & !(appraisal.annotations$span[i+n] %in% punctuation))          # and neither is the 'next' one
+      if( # if there's overlap in character position between this and the 'next'
+          appraisal.annotations$charstart[i+n] <= appraisal.annotations$charend[i]
+          & appraisal.annotations$comment[i+n] == appraisal.annotations$comment[i]
+          # and there is some annotation for both rows
+          & (appraisal.annotations$att[i+n] | appraisal.annotations$gra[i+n])
+          & (appraisal.annotations$att[i] | appraisal.annotations$gra[i])
+          )
       {
-        stacks = rbind(appraisal.annotations[i,], stacks)  # then add this row to stacks
-        stacks = rbind(appraisal.annotations[i+n,], stacks) # and the 'next' one
+        appraisal.annotations$stacky[i] = T
+        appraisal.annotations$stacky[i+n] = T
       }
     }
   }
-  bar = txtProgressBar(style=3)
   setTxtProgressBar(bar, value=i/length(appraisal.annotations$span))
 }
 close(bar)
-stacks = unique(stacks)
-stacks = stacks[order(stacks$comment, stacks$charstart),]
+stacked.spans = subset(appraisal.annotations, stacky)
+appraisal.annotations$stacky <- NULL
+stacked.spans$stacky <- NULL
+
+stacked.spans = unique(stacked.spans)
+stacked.spans = stacked.spans[order(stacked.spans$comment, stacked.spans$charstart),]
+rownames(stacked.spans) <- NULL
+
+# add column for which spans contain which
+look = 10
+# make a key so we know the original index of each row
+index.key = c()
+for (i in 1:length(stacked.spans$span))
+{
+  index.key[i] = strtoi(rownames(stacked.spans[i,]))
+}
+# e.g. index.key[1] returns "15," meaning 15 is the original index of stacked.spans[1,]
+stacked.spans$contains = 0
+bar = txtProgressBar(style=3)
+for(i in 1:length(stacked.spans$span))
+{
+  stacked.spans$contains[index.key[i]] = 0
+  for(n in 1:look)
+  {
+    if(match(index.key[i]+n, 1:length(stacked.spans$span), nomatch=FALSE))
+    {
+      if(stacked.spans$charstart[index.key[i]+n] <= stacked.spans$charend[index.key[i]] 
+         & stacked.spans$comment[index.key[i]+n] == stacked.spans$comment[index.key[i]]) # same thing as before checking for overlap
+      {
+        stacked.spans$contains[index.key[i]+n] = index.key[i]
+      }
+    }
+    if(match(index.key[i]-n, 1:length(stacked.spans$span), nomatch=FALSE))
+    {
+      if (stacked.spans$charstart[index.key[i]] <= stacked.spans$charend[index.key[i]-n] # but looking backwards too
+          & stacked.spans$comment[index.key[i]-n] == stacked.spans$comment[index.key[i]])
+      {
+        stacked.spans$contains[index.key[i]-n] = index.key[i]
+      }
+    }
+  }
+  setTxtProgressBar(bar, value=i/length(stacked.spans$span))
+}
+close(bar)
+
+stacked.spans$contained.by = 0
+bar = txtProgressBar(style=3)
+for(i in 1:length(stacked.spans$span))
+{
+  stacked.spans$contained.by[index.key[i]] = 0
+  for(n in 1:look)
+  {
+    if(match(index.key[i]-n, 1:length(stacked.spans$span), nomatch=FALSE))
+    {
+      if (stacked.spans$charstart[index.key[i]] <= stacked.spans$charend[index.key[i]-n] # looking backwards only
+          & stacked.spans$comment[index.key[i]-n] == stacked.spans$comment[index.key[i]])
+      {
+        stacked.spans$contained.by[index.key[i]] = index.key[i]-n
+      }
+    }
+  }
+  setTxtProgressBar(bar, value=i/length(stacked.spans$span))
+}
+close(bar)
+
+# find labels + polarities for the contained span
+stacked.spans$contained.attlab = NA
+stacked.spans$contained.attpol = NA
+stacked.spans$contained.gralab = NA
+stacked.spans$contained.grapol = NA
+bar = txtProgressBar(style=3)
+for (i in 1:length(stacked.spans$comment)){
+  if (stacked.spans$contains[i] != 0){
+    stacked.spans$contained.attlab[i] = stacked.spans$attlab[stacked.spans$contains[i]]
+    stacked.spans$contained.attpol[i] = stacked.spans$attpol[stacked.spans$contains[i]]
+    stacked.spans$contained.gralab[i] = stacked.spans$gralab[stacked.spans$contains[i]]
+    stacked.spans$contained.grapol[i] = stacked.spans$grapol[stacked.spans$contains[i]]
+  }
+  setTxtProgressBar(bar, value=i/length(stacked.spans$comment))
+}
+close(bar)
+
+stacks = na.omit(stacked.spans)
+stacks$att.samepol = stacks$attpol == stacks$contained.attpol
+stacks$att.samelab = stacks$attlab == stacks$contained.attlab
+stacks$gra.samepol = stacks$grapol == stacks$contained.grapol
+stacks$gra.samelab = stacks$gralab == stacks$contained.gralab
+
+# check timer
+proc.time() - timer
+
+#### Stacked Graduation ####
+# start timer
+timer = proc.time()
 
 # get a data.frame of all spans with graduation and the attitude spans that contain them
 print("Looking for stacked graduation.")
-graduation = stacks[0,]
+graduation = stacked.spans[0,]
 look = 6     # how far ahead to look
-for(i in 1:length(stacks$span))
+bar = txtProgressBar(style=3)
+for(i in 1:length(stacked.spans$span))
 {
   for(n in 1:look)
   {
     # look ahead, if we see a grad annotation for this comment and an attitude one for an overlapping future one then we can include them
-    if (match(i+n, 1:length(stacks$span), nomatch=FALSE))
+    if (match(i+n, 1:length(stacked.spans$span), nomatch=FALSE))
     {
-      if(stacks$charstart[i+n] <= stacks$charend[i]  # if the charstart for the 'next' is less than charend for this one
-         & stacks$comment[i+n] == stacks$comment[i]  # and the two are in the same comment
-         & (stacks$gralab[i] != "None" | stacks$grapol[i] != "None")  # and there's a graduation annotation in this row
-         & (stacks$attlab[i+n] != "None" | stacks$attpol[i+n] != "None") # and an attitude annotation in the 'next' one
+      if(stacked.spans$charstart[i+n] <= stacked.spans$charend[i]  # if the charstart for the 'next' is less than charend for this one
+         & stacked.spans$comment[i+n] == stacked.spans$comment[i]  # and the two are in the same comment
+         & (stacked.spans$gralab[i] != "None" | stacked.spans$grapol[i] != "None")  # and there's a graduation annotation in this row
+         & (stacked.spans$attlab[i+n] != "None" | stacked.spans$attpol[i+n] != "None") # and an attitude annotation in the 'next' one
          )
       {
-        graduation = rbind(stacks[i,], graduation)  # then add this row to the df (graduation annotation)
-        graduation = rbind(stacks[i+n,], graduation) # and the 'next' one (attitude annotation)
+        graduation = rbind(stacked.spans[i,], graduation)  # then add this row to the df (graduation annotation)
+        graduation = rbind(stacked.spans[i+n,], graduation) # and the 'next' one (attitude annotation)
       }
     }
     # look behind for the same thing
-    if (match(i-n, 1:length(stacks$span), nomatch=FALSE))
+    if (match(i-n, 1:length(stacked.spans$span), nomatch=FALSE))
     {
-      if(stacks$charstart[i] <= stacks$charend[i-n]  # if the charstart for this one is greater than charend for the 'previous' one
-         & stacks$comment[i-n] == stacks$comment[i]  # and the two are in the same comment
-         & (stacks$gralab[i] != "None" | stacks$grapol[i] != "None")  # and there's a graduation annotation in this row
-         & (stacks$attlab[i-n] != "None" | stacks$attpol[i-n] != "None") # and an attitude annotation in the 'previous' one
+      if(stacked.spans$charstart[i] <= stacked.spans$charend[i-n]  # if the charstart for this one is greater than charend for the 'previous' one
+         & stacked.spans$comment[i-n] == stacked.spans$comment[i]  # and the two are in the same comment
+         & (stacked.spans$gralab[i] != "None" | stacked.spans$grapol[i] != "None")  # and there's a graduation annotation in this row
+         & (stacked.spans$attlab[i-n] != "None" | stacked.spans$attpol[i-n] != "None") # and an attitude annotation in the 'previous' one
       )
       {
-        graduation = rbind(stacks[i,], graduation)  # then add this row to the df (graduation annotation)
-        graduation = rbind(stacks[i-n,], graduation) # and the 'previous' one (attitude annotation)
+        graduation = rbind(stacked.spans[i,], graduation)  # then add this row to the df (graduation annotation)
+        graduation = rbind(stacked.spans[i-n,], graduation) # and the 'previous' one (attitude annotation)
       }
     }
   }
-  bar = txtProgressBar(style=3)
-  setTxtProgressBar(bar, value=i/length(stacks$span))
+  setTxtProgressBar(bar, value=i/length(stacked.spans$span))
 }
 close(bar)
 
@@ -243,87 +433,28 @@ graduation = graduation[order(graduation$comment, graduation$charstart),]
 graduation.oldnames = graduation # this df's rownames will be indices for the appraisal.annotations df
 rownames(graduation) = 1:length(graduation$span)
 
-# add column for scope of graduation
-look = 10
-# find all rows with graduation (should be the same as focusrows + forcerows)
-candidates = graduation[graduation$grapol != "None" | graduation$gralab != "None",]
-# make a key so we know the original index of each row
-index.key = c()
-for (i in 1:length(candidates$span))
-{
-  index.key[i] = strtoi(rownames(candidates[i,]))
-}
-# e.g. index.key[1] returns "15," meaning 15 is the original index of candidates[1,]
-graduation$scope_of = 0
-for(i in 1:length(candidates$span))
-{
-  graduation$scope_of[index.key[i]] = 0
-  for(n in 1:look)
-  {
-    if(match(index.key[i]+n, 1:length(graduation$span), nomatch=FALSE))
-    {
-      if(graduation$charstart[index.key[i]+n] <= graduation$charend[index.key[i]] 
-        & graduation$comment[index.key[i]+n] == graduation$comment[index.key[i]]) # same thing as before checking for overlap
-      {
-        graduation$scope_of[index.key[i]+n] = index.key[i]
-      }
-    }
-    if(match(index.key[i]-n, 1:length(graduation$span), nomatch=FALSE))
-    {
-      if (graduation$charstart[index.key[i]] <= graduation$charend[index.key[i]-n] # but looking backwards too
-          & graduation$comment[index.key[i]-n] == graduation$comment[index.key[i]])
-      {
-        graduation$scope_of[index.key[i]-n] = index.key[i]
-      }
-    }
-  }
-  bar = txtProgressBar(style=3)
-  setTxtProgressBar(bar, value=i/length(candidates$span))
-}
-close(bar)
-
-graduation$belongs_to = 0
-for(i in 1:length(candidates$span))
-{
-  graduation$belongs_to[index.key[i]] = 0
-  for(n in 1:look)
-  {
-    if(match(index.key[i]-n, 1:length(graduation$span), nomatch=FALSE))
-    {
-      if (graduation$charstart[index.key[i]] <= graduation$charend[index.key[i]-n] # looking backwards only
-          & graduation$comment[index.key[i]-n] == graduation$comment[index.key[i]])
-      {
-        graduation$belongs_to[index.key[i]] = index.key[i]-n
-      }
-    }
-  }
-  bar = txtProgressBar(style=3)
-  setTxtProgressBar(bar, value=i/length(candidates$span))
-}
-close(bar)
-
 # find graduation spans with ambiguous scopes
 graduation.ambig = graduation[0,]
 look = 5
+bar = txtProgressBar(style=3)
 for(i in 1:length(graduation$span))
 {
   for(n in 1:look)
   {
     if (match(i+n, 1:length(graduation$span), nomatch=FALSE))
     {
-      if(graduation$scope_of[i] != 0 # look for matching scopes, signaling ambiguity
-         & graduation$scope_of[i] == graduation$scope_of[i+n])
+      if(graduation$contains[i] != 0 # look for matching scopes, signaling ambiguity
+         & graduation$contains[i] == graduation$contains[i+n])
       {
         # add this row to graduation.ambig
         graduation.ambig = rbind(graduation[i,], graduation.ambig)
         # and the next one
         graduation.ambig = rbind(graduation[i+n,], graduation.ambig)
         # and the one of which this is the scope
-        graduation.ambig = rbind(graduation[graduation$scope_of[i],], graduation.ambig)
+        graduation.ambig = rbind(graduation[graduation$contains[i],], graduation.ambig)
       }
     }
   }
-  bar = txtProgressBar(style=3)
   setTxtProgressBar(bar, value=i/length(graduation$span))
 }
 close(bar)
@@ -336,7 +467,11 @@ graduation.ambig = graduation.ambig[order(neworder),]
 
 # this doesn't include cases where there's multiple graduation in one attitude, e.g. graduation[53:57,]
 
+# check timer
+proc.time() - timer
 ###### Getting counts by comment ######
+# start timer
+timer = proc.time()
 
 # make a dataframe with one column, each of which is a unique comment id
 comment.counts = data.frame(unique(appraisal.annotations$comment))
@@ -376,6 +511,7 @@ comment.counts$focusdown = NA
 ### then fill them in
 ## starting with basic counts
 
+bar = txtProgressBar(style=3)
 for (i in 1:length(comment.counts$comment)){
   # subset the dataframe
   df = appraisal.annotations[appraisal.annotations$comment == comment.counts$comment[i],]
@@ -422,7 +558,6 @@ for (i in 1:length(comment.counts$comment)){
                                           df$grapol == 'up',]$gralab)
   comment.counts$focusdown[i] = length(df[df$gralab == 'Focus' &
                                             df$grapol == 'down',]$gralab)
-  bar = txtProgressBar(style=3)
   setTxtProgressBar(bar, value=i/length(comment.counts$comment))
 }
 close(bar)
@@ -460,7 +595,13 @@ comment.counts$downpct = comment.counts$down/comment.counts$gra
 ## Graduation/att
 comment.counts$gra.att = comment.counts$gra/comment.counts$att
 
+# check timer
+proc.time() - timer
+
 #### Count details ####
+# start timer
+timer = proc.time()
+
 ### Att polarity
 ## pos vs neg
 comment.counts$posratio = (comment.counts$pos/(comment.counts$pos + comment.counts$neg) -
@@ -513,14 +654,55 @@ length(subset(df, pospct == 0)$comment)
 length(subset(df,!catpos & !catneg)$comment)
 # 15 = 9%
 
+# check timer
+proc.time() - timer
+
 ###### Analyzing negation ######
+# start timer
+timer = proc.time()
 
+## Dataframe of Attitude and Graduation spans with some focus of negation in them
+## only including the smallest span
+# start with a subset df of Att + Gra spans with focus
+negattdf = subset(appraisal.annotations, (!(attlab %in% c('None', '*')) | 
+                                              !(gralab %in% c('None', '*'))) &
+                                            FOCUS)
+rownames(negattdf) <- NULL
+# get stacking info from stacked.spans
+negattdf$contains = NA
+negattdf$contained.by = NA
+negattdf$stackrow = NA
+bar = txtProgressBar(style=3)
+for (i in 1:length(negattdf$span)){
+  # find this span in stacked.spans
+  foundrow = subset(stacked.spans, comment == negattdf$comment[i] &
+                      charstart == negattdf$charstart[i] &
+                      charend == negattdf$charend[i] &
+                      attlab == negattdf$attlab[i])
+  # if the span is actually in stacked.spans
+  if (nrow(foundrow) > 0){
+    # copy the info
+    negattdf$contains[i] = foundrow$contains
+    negattdf$contained.by[i] = foundrow$contained.by
+    negattdf$stackrow[i] = as.numeric(rownames(foundrow))
+    setTxtProgressBar(bar, value=i/length(negattdf$span))
+  }
+}
+close(bar)
+# add a column for which stack each span is a part of (to be filled later)
+negattdf$stackid = NA
 
-## What percent of evaluative spans have negation?
-# Rows with any attitude
-length(rownames(subset(attrows, NEG == TRUE))) / length(rownames(attrows))
-# 0.1298505
+# find container spans and any spans they contain, then delete all but the smallest span
+# start with a subset df of those that are stacked spans
+df = subset(negattdf,!is.na(stackrow))
+for (i in as.numeric(rownames(df))){
+  
+}
 
+# check timer
+proc.time() - timer
+#### global timer end ####
+proc.time() - global.time
 ###### Visualization #####
 # often need to reshape the comment counts so that they work with ggplot; melt() does this
 # see http://seananderson.ca/2013/10/19/reshape/ for more info on that
@@ -746,6 +928,105 @@ ggplot(mapping=aes(difference)) + geom_density(fill = "purple", alpha = fill.alp
   labs(title = "Tendency towards upwards Graduation, by comment", x = "Percent of upward Graduation - percent of downward Graduation") +
   theme(text = element_text(size=txtsize))
 
+##### Stacked spans #####
+
+## general use df
+stackvis = subset(stacks, select=c(1, 7:12, 16:23))
+
+### How often do things switch around?
+
+## in Attitude (only Att comments)
+df = subset(stackvis, attlab != 'None' & attpol !='None' & contained.attlab != 'None' & contained.attpol != 'None',
+            select = c('comment', 'att.samelab', 'att.samepol'))
+df = melt(df, id.vars='comment')
+ggplot(data=df, aes(value, fill = variable)) + geom_bar(position = 'dodge')
+# more common for att to change than stay the same, reverse for pol
+
+## in Graduation (only Gra comments)
+df = subset(stackvis, gralab != 'None' & grapol !='None' & contained.gralab != 'None' & contained.grapol != 'None',
+            select = c('comment', 'gra.samelab', 'gra.samepol'))
+df = melt(df, id.vars='comment')
+ggplot(data=df, aes(value, fill = variable)) + geom_bar(position = 'dodge')
+# this graph basically isn't that interesting
+
+### Where does the switching happen?
+
+## attlab (None indicates graduation in contained span)
+df = subset(stackvis, attlab != 'None' & attlab != '*' & contained.attlab != '*', select = c('comment', 'attlab', 'contained.attlab'))
+ggplot(data=df, aes(contained.attlab, fill = contained.attlab, color = contained.attlab)) + facet_wrap(~attlab) +
+  geom_bar(position='dodge') + labs(title = 'Type of Attitude in stacked spans, by container')
+
+## attlab with only att
+df = subset(stackvis, contained.attlab != 'None' & attlab != '*' & contained.attlab != '*', select = c('comment', 'attlab', 'contained.attlab'))
+ggplot(data=df, aes(contained.attlab, fill = contained.attlab, color = contained.attlab)) + facet_wrap(~attlab) +
+  geom_bar(position='dodge') + labs(title = 'Type of Attitude in stacked spans, by container')
+
+## attlab by type of gra (no att containing att)
+df = subset(stackvis, attlab != 'None' & contained.attlab == 'None' & attlab != '*' & contained.attlab != '*', select = c('comment', 'attlab', 'contained.gralab'))
+ggplot(data=df, aes(contained.gralab, fill = contained.gralab, color = contained.gralab)) + facet_wrap(~attlab) +
+  geom_bar(position='dodge') + labs(title = 'Type of Attitude in stacked spans, by container')
+# not sure how to interpret difference in App and Jud
+
+#
+##### Negation #####
+
+## distribution of attlab in spans with negation
+df = subset(appraisal.annotations, NEG, select = c('comment', 'attlab'))
+ggplot(data=df, aes(attlab, fill = attlab)) + geom_bar(position='dodge')
+# mostly Judgment. None = graduation
+
+## distribution of attpol in spans with negation
+df = subset(appraisal.annotations, NEG & attpol != '*', select = c('comment', 'attpol'))
+ggplot(data=df, aes(attpol, fill = attpol)) + geom_bar(position='dodge') +
+  labs(title='Attitude polarity in spans with negators')
+
+### the next two are not interesting
+
+## distribution of gralab in spans with negation
+df = subset(appraisal.annotations, NEG & gralab != 'None', select = c('comment', 'gralab'))
+ggplot(data=df, aes(gralab, fill = gralab)) + geom_bar(position='dodge')
+
+## distribution of grapol in spans with negation
+df = subset(appraisal.annotations, NEG & grapol != 'None', select = c('comment', 'grapol'))
+ggplot(data=df, aes(grapol, fill = grapol)) + geom_bar(position='dodge')
+
+##### By article #####
+# set color scale
+scale = c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928','#000000')
+
+## attlab
+df = subset(article.counts, select = c('article', 'apppct', 'judpct', 'affpct'))
+df = df[order(df$apppct),]
+df$article = factor(df$article, levels = df$article)
+df = melt(df, id.vars='article')
+ggplot(data=df, aes(x=variable, y=value, fill = article)) +
+  geom_bar(position='dodge', stat='identity') + scale_fill_manual(values = scale)
+
+## attlab but only app and jud
+df = subset(article.counts, select = c('article', 'app', 'jud'))
+df$app.pct = df$app/(df$app+df$jud)
+df = df[order(df$app.pct),]
+df$article = factor(df$article, levels = df$article)
+ggplot(data=df, aes(x=article, y=app.pct, fill = article)) +
+  geom_bar(position='dodge', stat='identity') + scale_fill_manual(values = scale)
+
+## attpol
+df = subset(article.counts, select = c('article', 'pospct', 'negpct', 'neupct'))
+df = df[order(df$negpct),]
+df$article = factor(df$article, levels = df$article)
+df = melt(df, id.vars='article')
+ggplot(data=df, aes(x=variable, y=value, fill = article)) +
+  geom_bar(position='dodge', stat='identity') + scale_fill_manual(values = scale)
+
+## attpol but only pos and neg
+df = subset(article.counts, select = c('article', 'pos', 'neg'))
+df$pos.pct = df$pos/(df$pos+df$neg)
+df = df[order(df$pos.pct),]
+df$article = factor(df$article, levels = df$article)
+ggplot(data=df, aes(x=article, y=pos.pct, fill = article)) +
+  geom_bar(position='dodge', stat='identity') + scale_fill_manual(values = scale)
+
+#
 ##### Correlations #####
 # Correlation between tendency for negativity and tendency for appreciation
 df = subset(comment.counts, select = c("comment", "pospct", "negpct", "judpct", "apppct"))
