@@ -4,10 +4,13 @@ import re
 
 # where to find your cleaned TSVs:
 appraisal_projectpath = input('Path to appraisal project folder: (e.g. C:/.../Appraisal/clean_TSVs)')
-negation_projectpath = input('Path to negation project folder: (e.g. C:/.../Negation/clean_TSVs)')
 # where to write a new CSV
 appraisal_writepath = input('Path to write a new appraisal CSV to: (e.g. C:/.../combined_appraisal_comments.csv)')
+# same for negation
+negation_projectpath = input('Path to negation project folder: (e.g. C:/.../Negation/clean_TSVs)')
 negation_writepath = input('Path to write a new negation CSV to: (e.g. C:/.../combined_negation_comments.csv)')
+# where to find the mapping CSV so that names like source_x_x and aboriginal_1 are both used:
+mapping_csv = input("path to your mapping of names e.g. 'C:/.../comment_counter_appraisal_mapping.csv'")
 
 # change these variables if you are not using appraisal annotations
 # they are the actual column headers for the TSV files
@@ -33,25 +36,37 @@ appraisal_projectdirs = getcontents(appraisal_projectpath)
 negation_projectdirs = getcontents(negation_projectpath)
 
 
-def readprojfile(path, possible_headers, negation=False):
+def readprojfile(path, project):
     """
     Reads a cleaned WebAnno TSV into a pandas dataframe. One column is often read as full of NaN's due to the TSVs'
     original formatting, so this function drops any columns with NaN's.
 
     :param path: the path to the TSV
-    :param possible_headers: the headers that may occur in the TSV, as a list of lists of headers.
-        The function will check each list within possible_headers to see if its length is equal to the number of columns
-    :param negation: should be True if a negation TSV, False otherwise
+    :param possnames: the headers that may occur in the TSV, as a list of lists of headers.
+        The function will check each list within possnames to see if its length is equal to the number of columns
+    :param project: 'app' if appreciation, 'neg' if negation.
     :return: a pandas dataframe containing the information in the original TSV
     """
+    # set possnames
+    if project == "neg" or project.lower() == "negation":
+        possnames = negation_possnames
+        project = "neg"
+    elif project == "app" or project.lower() == "appraisal":
+        possnames = appraisal_possnames
+        project = "app"
+    else:
+        print("Project type not recognized. Use 'neg' or 'app'.")
+        possnames = None
+
     newdf = pd.read_csv(path, sep='\t', header=None)
     newdf = newdf.dropna(axis=1, how='all')
-    if negation and len(newdf.columns) == 5:    # Negation annotations with arrows have an extra column we won't use
+    if (project == "neg" or project.lower() == "negation")\
+            and len(newdf.columns) == 5:        # Neg annotations with arrows have an extra column we won't use
         newdf = newdf.loc[:, 0:3]               # so we'll just delete it
-    for headers in possible_headers:
+    for headers in possnames:
         if len(newdf.columns) == len(headers):
             newdf.columns = headers
-    if all([len(newdf.columns) != i for i in [len(headers) for headers in possible_headers]]):
+    if all([len(newdf.columns) != i for i in [len(headers) for headers in possnames]]):
         print("No correct number of columns in", path)
     return newdf
 
@@ -68,8 +83,22 @@ appraisal_collabels = ((appraisal_longheaders[3], attlabs),
                        (appraisal_longheaders[4], attpols),
                        (appraisal_longheaders[5], gralabs),
                        (appraisal_longheaders[6], grapols))
-# this next tuple is within a list so that the same commands we need later will iterate correctly
-negation_collabels = [('negation', neglabs)]
+# this next tuple is within another tuple so that the same commands we need later will iterate correctly
+negation_collabels = (('negation', neglabs),)
+
+# create a dictionary matching old comment names to comment counter ones
+if mapping_csv:
+    mapping1 = pd.read_csv(mapping_csv)
+    list1 = mapping1['appraisal_negation_annotation_file_name'].tolist()
+    list2 = mapping1['comment_counter'].tolist()
+    # dictionary of original to comment counter names
+    mappingdict1 = {}
+    for i in range(max(len(list1), len(list2))):
+        mappingdict1[list1[i]] = list2[i]
+    # same dictionary in reverse
+    mappingdict2 = {}
+    for i in range(max(len(list1), len(list2))):
+        mappingdict2[list2[i]] = list1[i]
 
 
 def getlabinds(dataframe, correspondences, dfname="dataframe", verbose=False):
@@ -112,7 +141,8 @@ def listand(list1, list2):
     return [a and b for a, b in zip(list1, list2)]
 
 
-def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable=None, verbose=False):
+def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable=None, verbose=False,
+                 clean_suffix='_cleaned.tsv'):
     """
     Looks in the dataframe for rows matching the label and returns them.
 
@@ -120,8 +150,10 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
     :param column: which column in the dataframe to look in for the labels
     :param label: which label to look for in the column
     :param commentid: the name of the comment; the new row will have this as its first entry
+    :param bothids: whether to include both comment names (e.g. aboriginal_1 and source_xx_xx)
     :param not_applicable: what to put in a cell if there is no data (e.g. something un-annotated)
     :param verbose: whether to tell you when it's done
+    :param clean_suffix: the suffix appended to clean files. Default assumes you cleaned them with clean_comments.py
     :return: a list that can be used as a new row or rows. If the label has no index (e.g. 'Appreciation' or '_'), then
         all rows with those labels will be returned. If it has an index (e.g. 'Appreciation[3]'), then one row
         representing that annotated span will be returned.
@@ -301,18 +333,18 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
         span_number = -1
         last_match = False
         for i in range(len(allfoundwords)):
-            if i - 1 in range(len(allfoundwords)):
+            if i - 1 in range(len(allfoundwords)):      # if this isn't the first word
                 # check if this word came right after the last one
                 if sentences[i - 1] == sentences[i] and\
                         (charpositions[i - 1][-1] == (charpositions[i][0] - 1) or\
                          charpositions[i - 1][-1] == (charpositions[i][0])):
                     if not last_match:  # if this is not a continuation of the previous span
-                        span_number = span_number + 1  # keep track of the number we're on (index of foundspans)
+                        span_number += 1  # keep track of the number we're on (index of foundspans)
                         if layer == 'att' or layer == 'gra':
                             foundspans.append([commentid,  # comment ID
-                                               sentences[i],  # sentence start
+                                               sentences[i-1],  # sentence start
                                                sentences[i],  # sentence end
-                                               charpositions[i][0],  # character start
+                                               charpositions[i-1][0],  # character start
                                                charpositions[i][-1],  # character end
                                                allfoundwords[i - 1] + ' ' + allfoundwords[i],  # words
                                                not_applicable,  # Labels are all assumed to be absent.
@@ -321,9 +353,9 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
                                                not_applicable, ])
                         elif layer == 'neg':
                             foundspans.append([commentid,  # comment ID
-                                               sentences[i],  # sentence start
+                                               sentences[i-1],  # sentence start
                                                sentences[i],  # sentence end
-                                               charpositions[i][0],  # character start
+                                               charpositions[i-1][0],  # character start
                                                charpositions[i][-1],  # character end
                                                allfoundwords[i - 1] + ' ' + allfoundwords[i],  # words
                                                not_applicable])
@@ -402,7 +434,7 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
                 int(  # we want to do math on this later
                     re.search(
                         r'^.*-', founddf['sentpos'].tolist()[i]  # finds whatever comes before a '-'
-                    ).group()[:-1]  # returns the string it found
+                    ).group()[:-1]  # returns the string it found, minus 1 character from the end
                 ))
 
         # find the character positions
@@ -491,13 +523,13 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
 
 # you can try commands like:
 """
-testdf1 = readprojfile(appraisal_projectdirs[3], appraisal_possnames)
+testdf1 = readprojfile(appraisal_projectdirs[3], 'app')
 lookup_label(testdf1,'attlab','_', commentid='testdf1')
 lookup_label(testdf1,'attlab','Judgment[4]', commentid='testdf1')
 lookup_label(testdf1,'attlab','Appreciation', commentid='testdf1')
 lookup_label(testdf1, 'gralab', 'Force', commentid='testdf1')
 
-testdf2 = readprojfile(negation_projectdirs[3], negation_possnames)
+testdf2 = readprojfile(negation_projectdirs[3], 'neg')
 lookup_label(testdf2, 'negation', 'NEG', commentid='testdf2')
 lookup_label(testdf2, 'negation', 'SCOPE[2]', commentid='testdf2')
 lookup_label(testdf2, 'negation', '_', commentid='testdf2')
@@ -527,16 +559,16 @@ negation_newheads = ['comment',
                      'label']
 
 
-def simplify_dataframe(dataframe, newcols, correspondences,
-                       commentid="Dataframe", not_applicable=None, verbose=()):
+def simplify_dataframe(dataframe, project,
+                       commentid="Dataframe", not_applicable=None, bothids=True, verbose=()):
     """
     Uses all the labels in correspondences to create a new dataframe organized by span rather than by word.
 
     :param dataframe: the dataframe to search and re-create
-    :param newcols: the column headers for the new dataframe
-    :param correspondences: a list or tuple of columns and labels like collabels
+    :param project: 'neg' for a negation project, 'app' for an appraisal project
     :param commentid: the name of the comment; the new row will have this as its first entry
     :param not_applicable: what to put in a cell if there is no data (e.g. something un-annotated)
+    :param bothids: whether to add in a column with the other id (e.g. aboriginal_1 or source_01...)
     :param verbose: an iterable containing one or more of the following strings:
                     missingcol: reports whenever a comment lacks an annotation for one or more columns
                     label_done: reports when each label has been searched for (same as verbose for lookup_label)
@@ -549,6 +581,20 @@ def simplify_dataframe(dataframe, newcols, correspondences,
         verbose_missingcol = True
     else:
         verbose_missingcol = False
+
+    # set newcols and correspondences
+    if project == "neg" or project.lower() == "negation":
+        newcols = negation_newheads
+        correspondences = negation_collabels
+        project = "neg"
+    elif project == "app" or project.lower() == "appraisal":
+        newcols = appraisal_newheads
+        correspondences = appraisal_search_correspondences
+        project = "app"
+    else:
+        print("Project type not recognized. Use 'neg' or 'app'.")
+        newcols = None
+        correspondences = None
 
     # find the labels to look for
     labinds = getlabinds(dataframe, correspondences=correspondences, dfname=commentid, verbose=verbose_missingcol)
@@ -572,9 +618,56 @@ def simplify_dataframe(dataframe, newcols, correspondences,
                                           verbose=v_label_done)
                 if '[' in searchlabel:  # in this case, foundstuff is one row of data
                     foundrows.append(foundstuff)
-                else:
-                    for row in foundstuff:  # in this case, foundstuff is many rows of data
+                else:                   # in this case, foundstuff is many rows of data
+                    for row in foundstuff:
                         foundrows.append(row)
+
+    # if foundrows is empty, then instead of returning an empty df, return a df with a None-annotated row.
+    if not foundrows:
+        # find the sentences
+        sentences = []
+        # add the first sentence number to sentences
+        sentences.append(
+            int(
+                re.search(
+                    r'^.*-', dataframe['sentpos'].tolist()[0]  # finds whatever comes before a '-'
+                ).group()[:-1]  # returns the string it found
+            ))
+        # add the last sentence number to sentences
+        sentences.append(
+            int(
+                re.search(
+                    r'^.*-', dataframe['sentpos'].tolist()[-1]  # finds whatever comes before a '-'
+                ).group()[:-1]  # returns the string it found
+            ))
+
+        # find the character positions
+        charpositions = (int(re.search(r'^.*-', dataframe['charpos'].tolist()[0]).group()[:-1]),
+                         int(re.search(r'-.*$', dataframe['charpos'].tolist()[-1]).group()[1:]))
+
+        # find all the words
+        allfoundwords = dataframe['word'].tolist()
+        allfoundwords = " ".join(allfoundwords)
+
+        if project == "app":
+            foundrows.append([commentid,  # comment ID
+                              sentences[0],  # sentence start
+                              sentences[1],  # sentence end
+                              charpositions[0],  # character start
+                              charpositions[1],  # character end
+                              allfoundwords,  # word
+                              not_applicable,  # Labels are all assumed to be absent.
+                              not_applicable,
+                              not_applicable,
+                              not_applicable, ])
+        elif project == "neg":
+            foundrows.append([commentid,  # comment ID
+                              sentences[0],  # sentence start
+                              sentences[1],  # sentence end
+                              charpositions[0],  # character start
+                              charpositions[1],  # character end
+                              allfoundwords,  # word
+                              not_applicable])  # no negation
 
     # make the rows into a new df
     newdf = pd.DataFrame(foundrows, columns=newcols)
@@ -583,6 +676,17 @@ def simplify_dataframe(dataframe, newcols, correspondences,
     newdf = newdf.sort_values(by=['charstart', 'charend'], ascending=[True, False])
     # lookup_label will return duplicate rows when there is a span annotated only for Attitude or only for Graduation.
     newdf = newdf.drop_duplicates()
+    # now, if necessary, add a column for the other comment id
+    if bothids:
+        if commentid in mappingdict1:
+            otherid = mappingdict1[commentid]
+        elif commentid in mappingdict2:
+            otherid = mappingdict2[commentid]
+        else:
+            otherid=''
+            print("No other comment id found for", commentid + '.')
+        if otherid:
+            newdf['comment_counter'] = otherid
     if 'comment_done' in verbose:
         print(commentid, "processed")
     return newdf
@@ -590,17 +694,14 @@ def simplify_dataframe(dataframe, newcols, correspondences,
 # try simplify_dataframe(testdf1, appraisal_newheads, appraisal_search_correspondences, commentid="testdf1")
 
 
-def combine_annotations(paths, possnames, newcols, correspondences,
-                        negation=False, not_applicable=None, verbose=()):
+def combine_annotations(paths, project,
+                        not_applicable=None, verbose=()):
     """
     Takes cleaned WebAnno TSVs from given paths and reorganizes them into one single dataframe, with each row
     representing a span (not a word, as original TSV rows do).
 
     :param paths: where your cleaned WebAnno TSVs can be found
-    :param possnames: a list of headers the TSVs may contain, like appraisal_possnames or negation_possnames
-    :param newcols: the column headers for the new combined dataframe
-    :param correspondences: a list or tuple of columns and labels like collabels
-    :param negation: should be True if the TSV is a negation TSV, False otherwise; defaults False
+    :param project: 'neg' for a negation project, 'app' for an appraisal project
     :param not_applicable: what to put in a cell if there is no data (e.g. something un-annotated)
     :param verbose: an iterable containing one or more of the following strings:
                     missingcol: reports whenever a comment lacks an annotation for one or more columns
@@ -611,15 +712,25 @@ def combine_annotations(paths, possnames, newcols, correspondences,
     :return: A new dataframe incorporating the information of all the TSVs in paths. Each row of the dataframe is one
         span.
     """
+    # set newcols and correspondences
+    if project == "neg" or project.lower() == "negation":
+        newcols = negation_newheads
+        project = "neg"
+    elif project == "app" or project.lower() == "appraisal":
+        newcols = appraisal_newheads
+        project = "app"
+    else:
+        print("Project type not recognized. Use 'neg' or 'app'.")
+        newcols = None
+
     newdf = pd.DataFrame(columns=newcols)
     for path in paths:
         commentid = path.split('/')[-1]
         if 'comment_start' in verbose:
             print("Processing comment", commentid)
-        originaldf = readprojfile(path, possnames, negation=negation)
+        originaldf = readprojfile(path, project)
         founddf = simplify_dataframe(originaldf,
-                                     newcols,
-                                     correspondences,
+                                     project,
                                      commentid=commentid,
                                      not_applicable=not_applicable,
                                      verbose=verbose)
@@ -632,9 +743,7 @@ def combine_annotations(paths, possnames, newcols, correspondences,
 
 if appraisal_projectpath:
     combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
-                                                       appraisal_possnames,
-                                                       appraisal_newheads,
-                                                       appraisal_search_correspondences,
+                                                       'app',
                                                        not_applicable='None',   # a string works better for R than
                                                        verbose=('all_done', 'comment_start'))           # an empty cell
     if appraisal_writepath:
@@ -647,11 +756,8 @@ else:
 
 if negation_projectpath:
     combined_negation_dataframe = combine_annotations(negation_projectdirs,
-                                                      negation_possnames,
-                                                      negation_newheads,
-                                                      negation_collabels,
+                                                      'neg',
                                                       not_applicable='None',
-                                                      negation=True,
                                                       verbose=('all_done', 'comment_start'))
     if negation_writepath:
         combined_negation_dataframe.to_csv(negation_writepath)
