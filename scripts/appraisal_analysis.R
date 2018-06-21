@@ -4,6 +4,7 @@ library(tokenizers)   # used to re-calculate number of words for graphs
 library(ggplot2)      # makes graphs
 library(reshape2)     # prepares data for graphing
 library(viridis)      # color schemes for graphs
+library(gridExtra)    # compare 2 graphs in one plot
 
 # start global timer
 global.time = proc.time()
@@ -664,40 +665,83 @@ timer = proc.time()
 ## Dataframe of Attitude and Graduation spans with some focus of negation in them
 ## only including the smallest span
 # start with a subset df of Att + Gra spans with focus
-negattdf = subset(appraisal.annotations, (!(attlab %in% c('None', '*')) | 
+focusdf = subset(appraisal.annotations, (!(attlab %in% c('None', '*')) | 
                                               !(gralab %in% c('None', '*'))) &
                                             FOCUS)
-rownames(negattdf) <- NULL
+rownames(focusdf) <- NULL
 # get stacking info from stacked.spans
-negattdf$contains = NA
-negattdf$contained.by = NA
-negattdf$stackrow = NA
+focusdf$contains = NA
+focusdf$contained.by = NA
+focusdf$stackrow = NA
 bar = txtProgressBar(style=3)
-for (i in 1:length(negattdf$span)){
+for (i in 1:length(focusdf$span)){
   # find this span in stacked.spans
-  foundrow = subset(stacked.spans, comment == negattdf$comment[i] &
-                      charstart == negattdf$charstart[i] &
-                      charend == negattdf$charend[i] &
-                      attlab == negattdf$attlab[i])
+  foundrow = subset(stacked.spans, comment == focusdf$comment[i] &
+                      charstart == focusdf$charstart[i] &
+                      charend == focusdf$charend[i] &
+                      attlab == focusdf$attlab[i])
   # if the span is actually in stacked.spans
   if (nrow(foundrow) > 0){
     # copy the info
-    negattdf$contains[i] = foundrow$contains
-    negattdf$contained.by[i] = foundrow$contained.by
-    negattdf$stackrow[i] = as.numeric(rownames(foundrow))
-    setTxtProgressBar(bar, value=i/length(negattdf$span))
+    focusdf$contains[i] = foundrow$contains
+    focusdf$contained.by[i] = foundrow$contained.by
+    focusdf$stackrow[i] = as.numeric(rownames(foundrow))
+    setTxtProgressBar(bar, value=i/length(focusdf$span))
   }
 }
 close(bar)
-# add a column for which stack each span is a part of (to be filled later)
-negattdf$stackid = NA
 
 # find container spans and any spans they contain, then delete all but the smallest span
 # start with a subset df of those that are stacked spans
-df = subset(negattdf,!is.na(stackrow))
+focusdf$stackid = NA
+df = subset(focusdf,!is.na(stackrow))
+stackiter = 0
 for (i in as.numeric(rownames(df))){
-  
+  # look for spans containing this one
+  searchterm = paste('^', focusdf$stackrow[i], '$', sep='')
+  containedid = grep(searchterm, focusdf$contained.by)
+  containerid = grep(searchterm, focusdf$contains)
+  # check for an existing stackid
+  if (!is.na(focusdf$stackid[i])){
+    currentid = focusdf$stackid[i]
+  } else if (any(!is.na(containerid))){
+    for (j in containedid){
+      if (!is.na(focusdf$stackid[j])){
+        currentid = focusdf$stackid[j]
+      }
+    }
+  } else if (any(!is.na(containerid))){
+    for (j in containerid){
+      if (!is.na(focusdf$stackid[j])){
+        currentid = focusdf$stackid[j]
+      }
+    }
+  } else {
+    stackiter <- stackiter + 1
+    currentid <- stackiter
+  }
+  # put the correct stackid in whichever relevant fields exist
+  focusdf$stackid[i] = currentid
+  if (length(containedid) > 0) focusdf$stackid[containedid] = currentid
+  if (length(containerid) > 0) focusdf$stackid[containerid] = currentid
 }
+
+# find the stackids that are not unique
+df = data.frame(table(focusdf$stackid))
+foundids = subset(df, Freq > 1)$Var1   # stackids that occur more than once
+df = subset(focusdf, stackid %in% foundids)
+
+# iterate over those stacks. The smallest span is always the one with the highest row number
+df$keep = F
+for (i in 1:length(df)){
+  # we want to keep only the last row for each stackid
+  if (df$stackid[i+1] != df$stackid[i]) df$keep[i] <- T
+}
+
+# remove appropriate rows from focusdf
+rows_to_remove = subset(df, !keep)
+rows_to_remove = as.numeric(rownames(rows_to_remove))
+focusdf = focusdf[-rows_to_remove,]
 
 # check timer
 proc.time() - timer
@@ -970,6 +1014,8 @@ ggplot(data=df, aes(contained.gralab, fill = contained.gralab, color = contained
 #
 ##### Negation #####
 
+### NEG keyword
+
 ## distribution of attlab in spans with negation
 df = subset(appraisal.annotations, NEG, select = c('comment', 'attlab'))
 ggplot(data=df, aes(attlab, fill = attlab)) + geom_bar(position='dodge')
@@ -980,7 +1026,7 @@ df = subset(appraisal.annotations, NEG & attpol != '*', select = c('comment', 'a
 ggplot(data=df, aes(attpol, fill = attpol)) + geom_bar(position='dodge') +
   labs(title='Attitude polarity in spans with negators')
 
-### the next two are not interesting
+## the next two are not interesting
 
 ## distribution of gralab in spans with negation
 df = subset(appraisal.annotations, NEG & gralab != 'None', select = c('comment', 'gralab'))
@@ -990,6 +1036,24 @@ ggplot(data=df, aes(gralab, fill = gralab)) + geom_bar(position='dodge')
 df = subset(appraisal.annotations, NEG & grapol != 'None', select = c('comment', 'grapol'))
 ggplot(data=df, aes(grapol, fill = grapol)) + geom_bar(position='dodge')
 
+### FOCUS and Attitude
+
+## distribution of attpol + attlab in spans with FOCUS (smallest span selected if ambiguous)
+df = subset(focusdf, gralab == 'None' & attlab != '*' & attpol != '*')
+p1 = ggplot(data=df, aes(attpol, fill = attlab)) + geom_bar(position='stack') +
+  labs(title = 'Attitude in spans with FOCUS') + scale_fill_brewer(palette='Spectral')
+
+## compare with general data
+df = subset(appraisal.annotations, attlab != 'None' & attlab != '*' & attpol != '*')
+p2 = ggplot(data=df, aes(attpol, fill = attlab)) + geom_bar(position='stack') +
+  labs(title = 'Attitude in the corpus as a whole') + scale_fill_brewer(palette='Spectral')
+
+## show both
+grid.arrange(p1, p2, nrow = 1)
+
+# so in the FOCUS one, there's less 'pos', more 'neu', and less affect
+
+#
 ##### By article #####
 # set color scale
 scale = c('#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928','#000000')
