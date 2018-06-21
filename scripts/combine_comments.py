@@ -559,8 +559,8 @@ negation_newheads = ['comment',
                      'label']
 
 
-def simplify_dataframe(dataframe, project,
-                       commentid="Dataframe", not_applicable=None, bothids=True, verbose=()):
+def simplify_dataframe(dataframe, project, commentid="Dataframe", not_applicable=None, bothids=True,
+                       clean_suffix='_cleaned.tsv', verbose=()):
     """
     Uses all the labels in correspondences to create a new dataframe organized by span rather than by word.
 
@@ -569,6 +569,7 @@ def simplify_dataframe(dataframe, project,
     :param commentid: the name of the comment; the new row will have this as its first entry
     :param not_applicable: what to put in a cell if there is no data (e.g. something un-annotated)
     :param bothids: whether to add in a column with the other id (e.g. aboriginal_1 or source_01...)
+    :param clean_suffix: the suffix added to clean files (this will be removed from commentid to find the other id)
     :param verbose: an iterable containing one or more of the following strings:
                     missingcol: reports whenever a comment lacks an annotation for one or more columns
                     label_done: reports when each label has been searched for (same as verbose for lookup_label)
@@ -678,6 +679,7 @@ def simplify_dataframe(dataframe, project,
     newdf = newdf.drop_duplicates()
     # now, if necessary, add a column for the other comment id
     if bothids:
+        commentid = commentid[:-len(clean_suffix)] + '.txt'
         if commentid in mappingdict1:
             otherid = mappingdict1[commentid]
         elif commentid in mappingdict2:
@@ -694,8 +696,7 @@ def simplify_dataframe(dataframe, project,
 # try simplify_dataframe(testdf1, appraisal_newheads, appraisal_search_correspondences, commentid="testdf1")
 
 
-def combine_annotations(paths, project,
-                        not_applicable=None, verbose=()):
+def combine_annotations(paths, project, not_applicable=None, bothids=True, clean_suffix='_cleaned.tsv', verbose=()):
     """
     Takes cleaned WebAnno TSVs from given paths and reorganizes them into one single dataframe, with each row
     representing a span (not a word, as original TSV rows do).
@@ -703,6 +704,9 @@ def combine_annotations(paths, project,
     :param paths: where your cleaned WebAnno TSVs can be found
     :param project: 'neg' for a negation project, 'app' for an appraisal project
     :param not_applicable: what to put in a cell if there is no data (e.g. something un-annotated)
+    :param bothids: whether to include a column with the other form of identification (see simplify_dataframe())
+    :param clean_suffix: the suffix for cleaned files (this is removed if bothids is True, so that the mapping
+                        dictionaries work.) (see simplify_dataframe()).
     :param verbose: an iterable containing one or more of the following strings:
                     missingcol: reports whenever a comment lacks an annotation for one or more columns
                     label_done: reports when each label has been searched for (same as verbose for lookup_label)
@@ -713,10 +717,10 @@ def combine_annotations(paths, project,
         span.
     """
     # set newcols and correspondences
-    if project == "neg" or project.lower() == "negation":
+    if project.lower() == "neg" or project.lower() == "negation":
         newcols = negation_newheads
         project = "neg"
-    elif project == "app" or project.lower() == "appraisal":
+    elif project.lower() == "app" or project.lower() == "appraisal":
         newcols = appraisal_newheads
         project = "app"
     else:
@@ -732,25 +736,39 @@ def combine_annotations(paths, project,
         founddf = simplify_dataframe(originaldf,
                                      project,
                                      commentid=commentid,
+                                     bothids=bothids,
+                                     clean_suffix=clean_suffix,
                                      not_applicable=not_applicable,
                                      verbose=verbose)
         newdf = newdf.append(founddf)
     if 'all_done' in verbose:
         print("New dataframe created.")
     return newdf
-# try combine_annotations(testdirs,newcols,appraisal_search_correspondences)
+# try combine_annotations(testdirs, 'app')
 
 
 if appraisal_projectpath:
-    combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
-                                                       'app',
-                                                       not_applicable='None',   # a string works better for R than
-                                                       verbose=('all_done', 'comment_start'))           # an empty cell
-    if appraisal_writepath:
-        combined_appraisal_dataframe.to_csv(appraisal_writepath)
-        print("Appraisal dataframe exported.")
+    if mapping_csv:
+        combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
+                                                           'app',
+                                                           not_applicable='None',   # a string works better for R than
+                                                           verbose=('comment_start',))           # an empty cell
+        if appraisal_writepath:
+            combined_appraisal_dataframe.to_csv(appraisal_writepath)
+            print("Appraisal dataframe exported.")
+        else:
+            print("Not exporting Appraisal project as no path was specified.")
     else:
-        print("Not exporting Appraisal project as no path was specified.")
+        combined_appraisal_dataframe = combine_annotations(appraisal_projectdirs,
+                                                           'app',
+                                                           not_applicable='None',
+                                                           bothids=False,
+                                                           verbose=('comment_start',))
+        if appraisal_writepath:
+            combined_appraisal_dataframe.to_csv(appraisal_writepath)
+            print("Appraisal dataframe exported.")
+        else:
+            print("Not exporting Appraisal project as no path was specified.")
 else:
     print("Not combining Appraisal project as no path was specified.")
 
@@ -758,7 +776,7 @@ if negation_projectpath:
     combined_negation_dataframe = combine_annotations(negation_projectdirs,
                                                       'neg',
                                                       not_applicable='None',
-                                                      verbose=('all_done', 'comment_start'))
+                                                      verbose=('comment_start',))
     if negation_writepath:
         combined_negation_dataframe.to_csv(negation_writepath)
         print("Negation dataframe exported.")
