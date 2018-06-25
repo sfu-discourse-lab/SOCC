@@ -13,12 +13,13 @@ global.time = proc.time()
 # start timer
 timer = proc.time()
 
-# Read file
+# Read files
 setwd("C:/Users/lcava/Documents/_My Actual Folders/Research/Discourse Processing/socc_comments/re_downloaded")
 appraisal.annotations <- read.csv("combined_appraisal_comments.csv", stringsAsFactors=FALSE)
 negation.annotations <- read.csv("combined_negation_comments.csv", stringsAsFactors=FALSE)
 
 setwd("C:/Users/lcava/Documents/_My Actual Folders/Research/Discourse Processing/socc_comments/analysis")
+contox.annotations <- read.csv("SFU_constructiveness_toxicity_corpus.csv")
 
 # remove the extra column
 appraisal.annotations <- appraisal.annotations[,2:length(appraisal.annotations)]
@@ -31,6 +32,39 @@ mismatches = subset(appraisal.annotations,
 # Add a column for whether there is an annotation or not
 appraisal.annotations$att = appraisal.annotations$attlab != "None" & appraisal.annotations$attpol != "None"
 appraisal.annotations$gra = appraisal.annotations$gralab != "None" & appraisal.annotations$grapol != "None"
+
+# remove constructiveness annotations not annotated for Appraisal
+contox.annotations = subset(contox.annotations, comment_counter %in% appraisal.annotations$comment_counter)
+## Make constructiveness + toxicity annotations more code-friendly
+# change is_constructive for better graph legibility
+contox.annotations$is_constructive = as.character(contox.annotations$is_constructive)
+contox.annotations[contox.annotations$is_constructive == 'yes',]$is_constructive = 'constructive'
+contox.annotations[contox.annotations$is_constructive == 'no',]$is_constructive = 'non-constructive'
+# coerce toxicity into characters
+contox.annotations$toxicity_level = as.character(contox.annotations$toxicity_level)
+contox.annotations$toxicity_level.confidence = as.character(contox.annotations$toxicity_level.confidence)
+# make a new column for the second-most popular toxicity annotation
+contox.annotations$toxicity_level_2 = contox.annotations$toxicity_level
+contox.annotations$toxicity_level.confidence_2 = contox.annotations$toxicity_level.confidence
+# toxicity_level and toxicity_level.confidence now have only the most popular option
+# toxicity_level_2 and toxicity_level.confidence_2 have the info for #2
+# or, if there's no second choice, they copy the info from the most popular
+df = contox.annotations[nchar(contox.annotations$toxicity_level) > 1,]
+for (i in as.numeric(rownames(df))){
+  contox.annotations$toxicity_level_2[i] =
+    strsplit(contox.annotations$toxicity_level[i], '\n')[[1]][2]
+  contox.annotations$toxicity_level.confidence_2 =
+    strsplit(contox.annotations$toxicity_level.confidence[i], '\n')[[1]][2]
+  contox.annotations$toxicity_level[i] =
+    strsplit(contox.annotations$toxicity_level[i], '\n')[[1]][1]
+  contox.annotations$toxicity_level.confidence[i] =
+    strsplit(contox.annotations$toxicity_level.confidence[i], '\n')[[1]][1]
+}
+# make toxicity levels numeric
+contox.annotations$toxicity_level = as.numeric(contox.annotations$toxicity_level)
+contox.annotations$toxicity_level.confidence = as.numeric(contox.annotations$toxicity_level.confidence)
+contox.annotations$toxicity_level_2 = as.numeric(contox.annotations$toxicity_level_2)
+contox.annotations$toxicity_level.confidence_2 = as.numeric(contox.annotations$toxicity_level.confidence_2)
 
 # check timer
 proc.time() - timer
@@ -85,14 +119,14 @@ focusdf = subset(negation.annotations, label=='FOCUS')
 
 # Mark $FOCUS as TRUE if there's a FOCUS keyword there
 bar = txtProgressBar(style=3)
-for (i in 1:length(negdf$label))
+for (i in 1:length(focusdf$label))
 {
-  appdf = appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]
+  appdf = appraisal.annotations[appraisal.annotations$comment == focusdf$comment[i],]
   for (j in 1:length(appdf$comment))
   {
-    if (negdf$charend[i] > appdf$charstart[j] & negdf$charend[i] <= appdf$charend[j])
+    if (focusdf$charend[i] > appdf$charstart[j] & focusdf$charend[i] <= appdf$charend[j])
     {
-      appraisal.annotations[appraisal.annotations$comment == negdf$comment[i],]$FOCUS[j] = T
+      appraisal.annotations[appraisal.annotations$comment == focusdf$comment[i],]$FOCUS[j] = T
     }
   }
   setTxtProgressBar(bar, value=i/length(negdf$label))
@@ -101,7 +135,6 @@ close(bar)
 
 # check timer
 proc.time() - timer
-
 ###### Getting basic counts ######
 # start timer
 timer = proc.time()
@@ -266,7 +299,7 @@ article.counts$neupct = article.counts$neu/article.counts$att
 # start timer
 timer = proc.time()
 
-# find stacked spans
+# find and mark stacked spans
 print("Looking for stacked spans.")
 appraisal.annotations$stacky = F
 look = 7     # how far ahead to look
@@ -298,40 +331,43 @@ stacked.spans = subset(appraisal.annotations, stacky)
 appraisal.annotations$stacky <- NULL
 stacked.spans$stacky <- NULL
 
-stacked.spans = unique(stacked.spans)
 stacked.spans = stacked.spans[order(stacked.spans$comment, stacked.spans$charstart),]
 rownames(stacked.spans) <- NULL
 
 # add column for which spans contain which
 look = 10
-# make a key so we know the original index of each row
-index.key = c()
-for (i in 1:length(stacked.spans$span))
-{
-  index.key[i] = strtoi(rownames(stacked.spans[i,]))
-}
-# e.g. index.key[1] returns "15," meaning 15 is the original index of stacked.spans[1,]
 stacked.spans$contains = 0
 bar = txtProgressBar(style=3)
 for(i in 1:length(stacked.spans$span))
 {
-  stacked.spans$contains[index.key[i]] = 0
+  stacked.spans$contains[i] = 0
   for(n in 1:look)
   {
-    if(match(index.key[i]+n, 1:length(stacked.spans$span), nomatch=FALSE))
+    if(match(i+n, 1:length(stacked.spans$span), nomatch=FALSE))
     {
-      if(stacked.spans$charstart[index.key[i]+n] <= stacked.spans$charend[index.key[i]] 
-         & stacked.spans$comment[index.key[i]+n] == stacked.spans$comment[index.key[i]]) # same thing as before checking for overlap
+      if(stacked.spans$charstart[i+n] <= stacked.spans$charend[i] &
+         stacked.spans$comment[i+n] == stacked.spans$comment[i]) # same thing as before checking for overlap
       {
-        stacked.spans$contains[index.key[i]+n] = index.key[i]
+        stacked.spans$contains[i+n] = i
+      }
+      if(stacked.spans$charstart[i+n] == stacked.spans$charstart[i] &
+         stacked.spans$charend[i+n] == stacked.spans$charend[i] &
+         stacked.spans$comment[i+n] == stacked.spans$comment[i]) # same thing as before checking for overlap
+      {
+        stacked.spans$contains[i] = i + n
       }
     }
-    if(match(index.key[i]-n, 1:length(stacked.spans$span), nomatch=FALSE))
+    if(match(i-n, 1:length(stacked.spans$span), nomatch=FALSE))
     {
-      if (stacked.spans$charstart[index.key[i]] <= stacked.spans$charend[index.key[i]-n] # but looking backwards too
-          & stacked.spans$comment[index.key[i]-n] == stacked.spans$comment[index.key[i]])
+      if (stacked.spans$charstart[i] <= stacked.spans$charend[i-n] # but looking backwards too
+          & stacked.spans$comment[i-n] == stacked.spans$comment[i])
       {
-        stacked.spans$contains[index.key[i]-n] = index.key[i]
+        stacked.spans$contains[i-n] = i
+      }
+      if (stacked.spans$charstart[i] == stacked.spans$charstart[i-n] &
+          stacked.spans$charend[i] == stacked.spans$charend[i-n] &
+          stacked.spans$comment[i-n] == stacked.spans$comment[i]){
+        stacked.spans$contains[i] = i-n
       }
     }
   }
@@ -343,15 +379,21 @@ stacked.spans$contained.by = 0
 bar = txtProgressBar(style=3)
 for(i in 1:length(stacked.spans$span))
 {
-  stacked.spans$contained.by[index.key[i]] = 0
+  stacked.spans$contained.by[i] = 0
   for(n in 1:look)
   {
-    if(match(index.key[i]-n, 1:length(stacked.spans$span), nomatch=FALSE))
+    if(match(i-n, 1:length(stacked.spans$span), nomatch=FALSE))
     {
-      if (stacked.spans$charstart[index.key[i]] <= stacked.spans$charend[index.key[i]-n] # looking backwards only
-          & stacked.spans$comment[index.key[i]-n] == stacked.spans$comment[index.key[i]])
+      if (stacked.spans$charstart[i] <= stacked.spans$charend[i-n] & # looking backwards only
+          stacked.spans$comment[i-n] == stacked.spans$comment[i])
       {
-        stacked.spans$contained.by[index.key[i]] = index.key[i]-n
+        stacked.spans$contained.by[i] = i-n
+      }
+      if (stacked.spans$charstart[i] == stacked.spans$charstart[i-n] &
+          stacked.spans$charend[i] == stacked.spans$charend[i-n] &
+          stacked.spans$comment[i] == stacked.spans$comment[i-n])
+      {
+        stacked.spans$contained.by[i-n] = i
       }
     }
   }
@@ -480,6 +522,9 @@ colnames(comment.counts) = 'comment'
 
 #### using the comment IDs, fill in comment length and count
 ### start by making empty columns
+# comment_counter name
+comment.counts$comment_counter = NA
+
 # length info
 comment.counts$charlength = NA
 comment.counts$wordlength = NA
@@ -509,13 +554,21 @@ comment.counts$forcedown = NA
 comment.counts$focusup = NA
 comment.counts$focusdown = NA
 
+# constructiveness and toxicity
+comment.counts$is_constructive = NA
+comment.counts$is_constructive.confidence = NA
+comment.counts$toxicity_level = NA
+comment.counts$toxicity_level.confidence = NA
+
 ### then fill them in
 ## starting with basic counts
 
 bar = txtProgressBar(style=3)
 for (i in 1:length(comment.counts$comment)){
-  # subset the dataframe
+  # subset the Appraisal annotations df
   df = appraisal.annotations[appraisal.annotations$comment == comment.counts$comment[i],]
+  # set comment_counter
+  comment.counts$comment_counter[i] = df$comment_counter[1]
   # length by word
   comment.counts$charlength[i] = max(df$charend)
   # length by word
@@ -559,6 +612,12 @@ for (i in 1:length(comment.counts$comment)){
                                           df$grapol == 'up',]$gralab)
   comment.counts$focusdown[i] = length(df[df$gralab == 'Focus' &
                                             df$grapol == 'down',]$gralab)
+  # subset the constructiveness/toxicity df
+  df = subset(contox.annotations, comment_counter == comment.counts$comment_counter[i])
+  comment.counts$is_constructive[i] = df$is_constructive
+  comment.counts$is_constructive.confidence[i] = df$is_constructive.confidence
+  comment.counts$toxicity_level[i] = df$toxicity_level
+  comment.counts$toxicity_level.confidence[i] = df$toxicity_level.confidence
   setTxtProgressBar(bar, value=i/length(comment.counts$comment))
 }
 close(bar)
@@ -599,7 +658,7 @@ comment.counts$gra.att = comment.counts$gra/comment.counts$att
 # check timer
 proc.time() - timer
 
-#### Count details ####
+##### Count details #####
 # start timer
 timer = proc.time()
 
@@ -1050,8 +1109,74 @@ p2 = ggplot(data=df, aes(attpol, fill = attlab)) + geom_bar(position='stack') +
 
 ## show both
 grid.arrange(p1, p2, nrow = 1)
-
 # so in the FOCUS one, there's less 'pos', more 'neu', and less affect
+
+#
+##### Constructiveness and toxicity #####
+## constructiveness
+# distribution of constructiveness
+ggplot(data=comment.counts, aes(is_constructive, fill=is_constructive)) + geom_bar()
+
+# pct positive vs constructiveness
+df = subset(comment.counts, att != 0, select = c('comment', 'is_constructive', 'posratio'))
+ggplot(data=df, aes(posratio)) + geom_density(fill='purple') + facet_wrap(~is_constructive)
+# constructive comments trend more positive, unconstructive more negative
+
+# attitude label and constructiveness (ignoring affect)
+df = subset(comment.counts, att != 0, select = c('comment', 'is_constructive', 'apppct', 'judpct'))
+df = melt(df, id.vars=c('comment', 'is_constructive'))
+ggplot(data=df, aes(value, fill=variable)) + geom_density(alpha=fill.alpha) + facet_wrap(~is_constructive)
+# doesn't look that interesting, maybe more appreciation in constructive while unconstructive is more even
+
+# affect and constructiveness (for comments with affect)
+df = subset(comment.counts, affpct != 0, select = c('comment', 'is_constructive', 'affpct'))
+ggplot(data=df, aes(affpct)) + geom_histogram(fill='purple') + facet_wrap(~is_constructive)
+# clearly more have some amount of affect, though still very little
+# there are 159 comments with affect, 125 of which are constructive (34 are unconstructive)
+
+# gralab and constructiveness
+df = subset(comment.counts, gra != 0, select = c('comment', 'is_constructive', 'forcepct'))
+ggplot(data=df, aes(forcepct)) + geom_histogram(fill='purple') + facet_wrap(~is_constructive)
+# more use of force relative to focus in constructive comments
+
+# graduation and constructiveness
+ggplot(data=comment.counts, aes(gra)) + geom_histogram(fill='purple') + facet_wrap(~is_constructive)
+# more graduation in constructive comments
+# 398 comments with Graduation, 289 of which are constructive (109 unconstructive)
+
+## toxicity
+# ultimately, the only interesting thing here is pct jud vs pct app
+# overall distribution of toxicity
+ggplot(data=contox.annotations, aes(toxicity_level, fill = toxicity_level)) + geom_bar()
+# 1: 829
+# 2: 172
+# 3: 35
+# 4: 7
+
+# pct positive vs toxicity
+df = subset(comment.counts, att != 0, select = c('comment', 'toxicity_level', 'posratio'))
+ggplot(data=df, aes(posratio)) + geom_density(fill='purple') + facet_wrap(~toxicity_level)
+# doesn't look very different
+
+# attitude label and toxicity (ignoring affect)
+df = subset(comment.counts, att != 0, select = c('comment', 'toxicity_level', 'apppct', 'judpct'))
+df = melt(df, id.vars=c('comment', 'toxicity_level'))
+ggplot(data=df, aes(value, fill=variable)) + geom_density(alpha=fill.alpha) + facet_wrap(~toxicity_level)
+# especially at higher levls, much more judgment (though N is small)
+
+# affect and toxicity (for comments with affect)
+df = subset(comment.counts, affpct != 0, select = c('comment', 'toxicity_level', 'affpct'))
+ggplot(data=df, aes(affpct)) + geom_density(fill='purple') + facet_wrap(~toxicity_level)
+# doesn't seem to make a difference
+
+# gralab and toxicity
+df = subset(comment.counts, gra != 0, select = c('comment', 'toxicity_level', 'forcepct'))
+ggplot(data=df, aes(forcepct)) + geom_density(fill='purple') + facet_wrap(~toxicity_level)
+# about the same
+
+# graduation and toxicity
+ggplot(data=comment.counts, aes(gra)) + geom_density(fill='purple') + facet_wrap(~toxicity_level)
+# looks the same
 
 #
 ##### By article #####
