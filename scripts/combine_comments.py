@@ -44,7 +44,7 @@ def readprojfile(path, project):
     :param path: the path to the TSV
     :param possnames: the headers that may occur in the TSV, as a list of lists of headers.
         The function will check each list within possnames to see if its length is equal to the number of columns
-    :param project: 'app' if appreciation, 'neg' if negation.
+    :param project: 'app' if Appraisal, 'neg' if negation.
     :return: a pandas dataframe containing the information in the original TSV
     """
     # set possnames
@@ -55,7 +55,7 @@ def readprojfile(path, project):
         possnames = appraisal_possnames
         project = "app"
     else:
-        print("Project type not recognized. Use 'neg' or 'app'.")
+        print("Project type not recognized. Use 'neg' or 'att'.")
         possnames = None
 
     newdf = pd.read_csv(path, sep='\t', header=None)
@@ -340,6 +340,7 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
                          charpositions[i - 1][-1] == (charpositions[i][0])):
                     if not last_match:  # if this is not a continuation of the previous span
                         span_number += 1  # keep track of the number we're on (index of foundspans)
+                        # add the row for this span to foundspans
                         if layer == 'att' or layer == 'gra':
                             foundspans.append([commentid,  # comment ID
                                                sentences[i-1],  # sentence start
@@ -369,6 +370,29 @@ def lookup_label(dataframe, column, label, commentid="dataframe", not_applicable
 
                 else:
                     last_match = False  # record these two i's as non-contiguous
+                    # check if this is the first pair of words we're looking at
+                    if i == 1:      # i would equal 1 bc we skip i=0 (since we looked backwards)
+                        # if i=1 and the first and second words are non-contiguous, we need to add
+                        # the first word to foundspans.
+                        if layer == 'att' or layer == 'gra':
+                            foundspans.append([commentid,  # comment ID
+                                               sentences[i-1],  # sentence start
+                                               sentences[i-1],  # sentence end
+                                               charpositions[i-1][0],  # character start
+                                               charpositions[i-1][-1],  # character end
+                                               allfoundwords[i-1],  # word
+                                               not_applicable,  # Labels are all assumed to be absent.
+                                               not_applicable,  # Per earlier code, it should tell you if that is
+                                               not_applicable,  # not actually the case.
+                                               not_applicable, ])
+                        elif layer == 'neg':
+                            foundspans.append([commentid,  # comment ID
+                                               sentences[i-1],  # sentence start
+                                               sentences[i-1],  # sentence end
+                                               charpositions[i-1][0],  # character start
+                                               charpositions[i-1][-1],  # character end
+                                               allfoundwords[i-1],  # word
+                                               not_applicable])
                     # look ahead to see if the next word is a continuation of this span:
                     if i + 1 in range(len(sentences)):
                         if sentences[i + 1] != sentences[i] and charpositions[i + 1][-1] != (charpositions[i][0] + 1):
