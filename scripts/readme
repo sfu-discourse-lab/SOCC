@@ -8,4 +8,4 @@ webanno_to_sentence.py uses the output of combine_webanno.py, a mapping of comme
 
 webanno_to_span.py asks for a path to a folder containing the files cleaned by clean_comments.py and writes a new CSV of those annotations combined to a path of your choice. It also reorganizes the data so that each row represents one annotated span (in original files, each row represents a word). It also sorts the rows by their position in the comment (so that the comments can be read from top to bottom in order) and then by the size of the annotation (so that longer spans appear before shorter ones). old_combine_comments.py is the older version of this.
 
-appraisal_analysis.R uses the combined dataframe and does different counts and analysis. Still in development.
+appraisal_analysis.R uses the combined dataframe and does different counts and analysis. The analysis is complete, but the code is still messy.
