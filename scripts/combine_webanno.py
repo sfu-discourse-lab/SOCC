@@ -20,14 +20,16 @@ folders = getcontents(projectpath)
 files = [getcontents(doc)[0] for doc in folders]
 
 newfile = ''
+names = []
 for file in files:
     not_name = re.search(r'.*/', file).group()
     endlength = len(file[len(not_name):]) + 1
     beginlength = len(re.search(r'.*/', file[:-endlength]).group())
     name = file[beginlength:-endlength]
-    newfile = newfile + '\n' + name + '\n'
+    names.append(name)
+    newfile = newfile + '#comment: ' + name + '\n'
     with smart_open(file, 'r') as f:
-        newfile = newfile + f.read()
+        newfile = newfile + f.read() + '#end of comment\n\n'
     print('processed', name)
 
 # output
