@@ -164,10 +164,10 @@ We annotated a subset of SOCC for constructiveness and toxicity. The annotated c
 
 For toxicity, we asked annotators a multiple-choice question, *How toxic is the comment?* Four answers were possible:
 
-  - Very toxic
-  - Toxic
-  - Mildly toxic
-  - Not toxic
+  - Very toxic (4)
+  - Toxic (3)
+  - Mildly toxic (2)
+  - Not toxic (1)
 
 More information on the annotation, and the instructions to annotators, is available in the CrowdFlower_instructions file. 
 
