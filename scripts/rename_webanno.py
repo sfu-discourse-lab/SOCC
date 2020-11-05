@@ -70,11 +70,28 @@ cleansources = cleanfilenames(sources, sourcedir)
 
 # prepare to rename those files so they end in .txt
 def rename_file(directory, pattern, titlepattern):
+    """
+    Rename a file or directory.
+
+    Args:
+        directory: (str): write your description
+        pattern: (str): write your description
+        titlepattern: (str): write your description
+    """
     for pathAndFilename in glob.iglob(os.path.join(directory, pattern)):
         os.rename(pathAndFilename, os.path.join(directory, titlepattern))
 
 
 def massrename(directory, dictionary, confirmation='Done!', check=0):
+    """
+    Massrenames a directory
+
+    Args:
+        directory: (str): write your description
+        dictionary: (dict): write your description
+        confirmation: (todo): write your description
+        check: (bool): write your description
+    """
     for i in range(len(dictionary)):
         if check == 1:
             print([dictionary[i][0], dictionary[i][1]])

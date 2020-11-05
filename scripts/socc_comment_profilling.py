@@ -158,6 +158,12 @@ def yearly_count(df):
 	return yearly_counts
 
 def main(path):
+    """
+    Main function.
+
+    Args:
+        path: (str): write your description
+    """
 	df = pd.read_csv('Data/raw/gnm_comment_threads.csv').drop_duplicates()
 	result = pd.DataFrame(df.comment_author.drop_duplicates().reset_index(drop=True))
 	result = result.join(posted_comments(df), on = 'comment_author')
