@@ -13,7 +13,7 @@ For more information about this work, please see our papers.
 
 # Download link and data
 
-[Download SFU Opinion and Comments Corpus](https://researchdata.sfu.ca/islandora/object/islandora%3A9109)
+[Download SFU Opinion and Comments Corpus](https://www.kaggle.com/mtaboada/sfu-opinion-and-comments-corpus-socc)
 
 The data is divided into two main parts, with each part being, in turn, divided into three portions: 
 - [Raw data](#raw)
