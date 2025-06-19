@@ -18,7 +18,7 @@ For more information about this work, please see our papers.
 Download from various sources:
 - Here, as a [release](https://github.com/sfu-discourse-lab/SOCC/releases)
 - [Kaggle](https://www.kaggle.com/mtaboada/sfu-opinion-and-comments-corpus-socc)
-- [FDRD](https://www.frdr-dfdr.ca/repo/)
+- [FDRD](https://doi.org/10.20383/103.01317)
 
 The data is divided into two main parts, with each part being, in turn, divided into three portions: 
 - [Raw data](#raw)
